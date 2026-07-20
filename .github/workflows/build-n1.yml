@@ -3,7 +3,7 @@ name: build-n1
 on:
   workflow_dispatch:
   schedule:
-    - cron: 0 22 * * 4
+    - cron: 0 22 * * 6
   # push:
   #   branches:
   #     - master
