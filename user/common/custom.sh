@@ -70,6 +70,18 @@ do_common() {
     dl_git_sub https://github.com/rockjake/luci-app-fancontrol package/luci-app-fancontrol luci-app-fancontrol
     rm -rf package/fancontrol
     dl_git_sub https://github.com/rockjake/luci-app-fancontrol package/fancontrol fancontrol
+
+    # add luci-app-tailscale-community
+    rm -rf package/luci-app-tailscale-community
+    dl_git_sub https://github.com/Tokisaki-Galaxy/luci-app-tailscale-community package/luci-app-tailscale-community luci-app-tailscale-community main
+
+    # move tailscale menu from Services to VPN
+    find package/luci-app-tailscale-community -path '*/menu.d/*.json' | while read f; do
+        sed -i 's|"admin/services/tailscale"|"admin/vpn/tailscale"|g' "$f"
+    done
+
+    # persist tailscale state across reboots
+    export TS_STATE_DIR=/etc/tailscale/state
 }
 
 # excute

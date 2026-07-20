@@ -1,0 +1,12 @@
+#!/bin/sh
+uci -q get luci.tailscale_vpn >/dev/null 2>&1 && exit 0
+uci -q get luci.tailscale >/dev/null 2>&1 || exit 0
+node=$(uci show luci | grep "=tailscale$" | head -1 | cut -d= -f1)
+if [ -n "$node" ]; then
+    uci set luci.tailscale_vpn=internal
+    val=$(uci -q get "$node")
+    uci set luci.tailscale_vpn="$val"
+    uci delete "$node"
+    uci commit luci
+fi
+exit 0

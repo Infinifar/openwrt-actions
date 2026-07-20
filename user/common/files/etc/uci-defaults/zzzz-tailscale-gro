@@ -1,0 +1,3 @@
+#!/bin/sh
+ethtool -K br-lan rx-gro-list on 2>/dev/null
+exit 0

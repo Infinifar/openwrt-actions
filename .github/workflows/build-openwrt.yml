@@ -32,15 +32,6 @@ jobs:
       matrix:
         target:
           - lede-openclash-x86-amd64
-          - lede-common-x86-amd64
-          - lede-common-r2s-arm64
-          - lede-common-360t7-arm64
-          - lede-openclash-zero3-arm64
-          - lede-nikki-zero3-arm64
-          - lede-common-newifi_d2-mipsle_softfloat
-          - immortalwrt-common-x86-amd64
-          - immortalwrt-openclash-x86-amd64
-          - immortalwrt-common-filogic880-arm64
 
     steps:
       - name: Checkout
@@ -167,6 +158,9 @@ jobs:
             find "user/${{matrix.target}}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d 'openwrt' -p0 --forward"
           )
           fi
+
+      - name: Add Tailscale feed
+        run: echo "src-git opentailscale https://github.com/GuNanOvO/openwrt-tailscale.git;feed" >> openwrt/feeds.conf.default
 
       - name: Update feeds
         run: cd openwrt && ./scripts/feeds update -a

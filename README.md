@@ -1,8 +1,9 @@
-# OpenWRT 编译
+# OpenWRT 编译 (含 Tailscale)
 
 [![build-openwrt](https://github.com/alecthw/openwrt-actions/actions/workflows/build-openwrt.yml/badge.svg)](https://github.com/alecthw/openwrt-actions/actions/workflows/build-openwrt.yml)
 [![build-n1](https://github.com/alecthw/openwrt-actions/actions/workflows/build-n1.yml/badge.svg)](https://github.com/alecthw/openwrt-actions/actions/workflows/build-n1.yml)
-[![build-private](https://github.com/alecthw/openwrt-actions/actions/workflows/build-private.yml/badge.svg)](https://github.com/alecthw/openwrt-actions/actions/workflows/build-private.yml)
+
+> Fork 自 [alecthw/openwrt-actions](https://github.com/alecthw/openwrt-actions)，仅保留 `lede-openclash-x86-amd64` 和 `lede-common-n1-arm64`，并集成 Tailscale。
 
 每周五自动构建新版本。
 
@@ -14,9 +15,17 @@
 
 密码: `没有密码`，其他如有涉及默认密码的都是 `password`
 
+## Tailscale 集成
+
+本分支已集成 Tailscale，包含：
+- **Tailscale 二进制**：通过 [GuNanOvO/openwrt-tailscale](https://github.com/GuNanOvO/openwrt-tailscale) feed 编译
+- **LUCI 界面**：[luci-app-tailscale-community](https://github.com/Tokisaki-Galaxy/luci-app-tailscale-community)（菜单位于 VPN 分类下）
+- **UDP GRO 优化**：首次启动自动开启 `rx-gro-list`，消除 Tailscale UDP GRO 转发警告
+- **状态持久化**：`TS_STATE_DIR=/etc/tailscale/state`，节点密钥和登录状态不会因重启丢失
+
 ## 详细说明见各个目标子目录
 
-分为旁路由固件和硬件路由固件。需要其他类型的固件可以提 [Issues](https://github.com/alecthw/openwrt-actions/issues)。
+分为旁路由固件和硬件路由固件。
 
 注意：旁路由固件默认未开启 DHCP！！！旁路由固件默认未开启 DHCP！！！旁路由固件默认未开启 DHCP！！！
 
@@ -32,19 +41,8 @@
 
 | 说明 | 下载 |
 |---|---|
-| [lede-common-n1-arm64](user/lede-common-n1-arm64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-common-n1-arm64) |
-| [lede-common-r2s-arm64](user/lede-common-r2s-arm64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-common-r2s-arm64) |
-| [lede-common-x86-amd64](user/lede-common-x86-amd64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-common-x86-amd64) |
 | [lede-openclash-x86-amd64](user/lede-openclash-x86-amd64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-openclash-x86-amd64) |
-
-#### 基于 ImmortalWrt 构建
-
-- [ImmortalWrt 源码](https://github.com/immortalwrt/immortalwrt)
-
-| 说明 | 下载 |
-|---|---|
-| [immortalwrt-common-x86-amd64](user/immortalwrt-common-x86-amd64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/immortalwrt-common-x86-amd64) |
-| [immortalwrt-openclash-x86-amd64](user/immortalwrt-openclash-x86-amd64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/immortalwrt-openclash-x86-amd64) |
+| [lede-common-n1-arm64](user/lede-common-n1-arm64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-common-n1-arm64) |
 
 #### 特别说明
 
@@ -62,16 +60,7 @@ Openwrt、iKuai、RouterOS 都是支持不通告 IPv6 DNS 的。如果你的主�
 
 ##### 3. 开启 openclash 后 DNS 异常问题
 
-参考：[Clash 订阅引起 DNS 问题的说明](user/lede-common-x86-amd64/README.md#clash-订阅引起-dns-问题的说明)
-
-### 硬路由固件
-
-目前仅编译了我自己有的两款，需要其他固件提 [Issues](https://github.com/alecthw/openwrt-actions/issues)，或者 Fork 项目自行构建。
-
-| 说明 | 下载 |
-|---|---|
-| [lede-common-360t7-arm64](user/lede-common-360t7-arm64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-common-360t7-arm64) |
-| [lede-common-newifi_d2-mipsle_softfloat](user/lede-common-newifi_d2-mipsle_softfloat/README.md)) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-common-newifi_d2-mipsle_softfloat) |
+参考：[Clash 订阅引起 DNS 问题的说明](https://github.com/alecthw/openwrt-actions/blob/master/user/lede-common-x86-amd64/README.md#clash-%E8%AE%A2%E9%98%85%E5%BC%95%E8%B5%B7-dns-%E9%97%AE%E9%A2%98%E7%9A%84%E8%AF%B4%E6%98%8E)
 
 ## 命令行修改 IP 和掩码
 
@@ -93,12 +82,13 @@ uci commit network
 1. 导出 `Settings.ini` 内容为环境变量
 2. 克隆 OpenWRT 源码
 3. 安装 `user/common/patches`和`user/[target]/patches` 目录下的补丁
-4. 更新 feeds，Update feeds
-5. 复制 `user/common/files` 和 `user/[target]/files` 到 `[OpenWRT Code Dir]/files`，注意后者覆盖前者
-6. 执行脚本 `user/common/custom.sh` 和 `user/[target]/custom.sh`
-7. 安装 feeds，Install feeds
-8. 执行 `app_config.sh` 脚本，对插件做自定义，包括下载部分插件需要的二进制执行文件，例如 `clash` 和 `AdGuardHome`
-9. 开始编译
+4. 添加 Tailscale feed（`src-git opentailscale https://github.com/GuNanOvO/openwrt-tailscale.git;feed`）
+5. 更新 feeds，Update feeds
+6. 复制 `user/common/files` 和 `user/[target]/files` 到 `[OpenWRT Code Dir]/files`，注意后者覆盖前者
+7. 执行脚本 `user/common/custom.sh` 和 `user/[target]/custom.sh`
+8. 安装 feeds，Install feeds
+9. 执行 `app_config.sh` 脚本，对插件做自定义，包括下载部分插件需要的二进制执行文件，例如 `clash` 和 `AdGuardHome`
+10. 开始编译
 
 ## 本地构建指南
 
@@ -123,7 +113,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/ac
 ### 构建
 
 ```bash
-git clone https://github.com/alecthw/openwrt-actions.git
+git clone <your-fork-url>.git
 cd openwrt-actions
 act \
     -r
