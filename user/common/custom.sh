@@ -63,17 +63,6 @@ do_common() {
     rm -rf package/luci-app-nginx
     dl_git https://github.com/arenekosreal/luci-app-nginx package/luci-app-nginx
 
-    # Create upx symlink for tailscale UPX compression
-    # (GuNanOvO/openwrt-tailscale Makefile uses $(TOPDIR)/upx/upx)
-    mkdir -p upx
-    UPX_BIN=$(which upx-ucl 2>/dev/null || which upx 2>/dev/null || echo "")
-    if [ -n "$UPX_BIN" ]; then
-        ln -sf "$UPX_BIN" upx/upx
-        echo "Created upx symlink: $UPX_BIN -> upx/upx"
-    else
-        echo "Warning: upx not found, tailscale UPX will be skipped"
-    fi
-
     # add luci-app-tailscale-community
     rm -rf package/luci-app-tailscale-community
     dl_git_sub https://github.com/Tokisaki-Galaxy/luci-app-tailscale-community package/luci-app-tailscale-community luci-app-tailscale-community main
