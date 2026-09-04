@@ -1,0 +1,19 @@
+#!/bin/sh
+
+config_dir=/etc/AdGuardHome
+data_dir=$config_dir/data
+
+mkdir -p "$data_dir"
+
+# Migrate data created by the newer package default or the older custom layout.
+for old_dir in /var/lib/adguardhome /etc/adguardhome/data; do
+	if [ -d "$old_dir" ] && [ "$old_dir" != "$data_dir" ]; then
+		cp -a "$old_dir"/. "$data_dir"/ 2>/dev/null
+	fi
+done
+
+if id adguardhome >/dev/null 2>&1; then
+	chown -R adguardhome:adguardhome "$config_dir"
+fi
+
+exit 0

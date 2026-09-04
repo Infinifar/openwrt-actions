@@ -73,7 +73,7 @@ do_common() {
 
     # add luci-app-tailscale-community
     rm -rf package/luci-app-tailscale-community
-    dl_git_sub https://github.com/Tokisaki-Galaxy/luci-app-tailscale-community package/luci-app-tailscale-community luci-app-tailscale-community main
+    dl_git_sub https://github.com/Tokisaki-Galaxy/luci-app-tailscale-community package/luci-app-tailscale-community luci-app-tailscale-community master
 
     # move tailscale menu from Services to VPN
     find package/luci-app-tailscale-community -path '*/menu.d/*.json' | while read f; do
