@@ -1,0 +1,9 @@
+# Configure the address of your public Orbien server before enabling this service.
+# server = "example.com:9527"
+
+# Example tunnel:
+# [[tunnels]]
+# name = "ssh"
+# protocol = "tcp"
+# service = "127.0.0.1:22"
+# remotePort = 9000

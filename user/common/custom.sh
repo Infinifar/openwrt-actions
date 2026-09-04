@@ -78,6 +78,32 @@ do_common() {
 
     # persist tailscale state across reboots
     export TS_STATE_DIR=/etc/tailscale/state
+
+    # bundle the latest statically linked Orbien client for the target CPU
+    case "$build_arch" in
+    amd64)
+        orbien_arch="amd64"
+        ;;
+    arm64)
+        orbien_arch="arm64"
+        ;;
+    *)
+        orbien_arch=""
+        ;;
+    esac
+    if [ -n "$orbien_arch" ]; then
+        orbien_version=$(curl -fsSL https://api.github.com/repos/orbien-org/orbien/releases/latest | awk -F '"' '/"tag_name"/ { print $4; exit }' | sed 's/^v//')
+        if [ -z "$orbien_version" ]; then
+            echo "Error: Unable to determine the latest Orbien version"
+            return 1
+        fi
+        orbien_archive="orbien_${orbien_version}_linux_${orbien_arch}_musl.tar.gz"
+        orbien_tmp=$(mktemp -d)
+        curl -fsSL "https://github.com/orbien-org/orbien/releases/download/v${orbien_version}/${orbien_archive}" -o "$orbien_tmp/orbien.tar.gz"
+        tar -xzf "$orbien_tmp/orbien.tar.gz" -C "$orbien_tmp"
+        install -Dm755 "$orbien_tmp/orbien" files/usr/bin/orbien
+        rm -rf "$orbien_tmp"
+    fi
 }
 
 # excute

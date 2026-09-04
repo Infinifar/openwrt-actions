@@ -23,6 +23,19 @@
 - **UDP GRO 优化**：首次启动自动开启 `rx-gro-list`，消除 Tailscale UDP GRO 转发警告
 - **状态持久化**：`TS_STATE_DIR=/etc/tailscale/state`，节点密钥和登录状态不会因重启丢失
 
+## Orbien 集成
+
+固件内置 [Orbien](https://github.com/orbien-org/orbien) 最新 release 的静态 musl 客户端（x86_64 和 arm64），用于内网穿透。公网服务端不内置，建议部署在 VPS。
+
+编辑 `/etc/orbien/orbien.toml` 填入服务端和隧道配置，再启用服务：
+
+```sh
+uci set orbien.main.enabled='1'
+uci commit orbien
+/etc/init.d/orbien enable
+/etc/init.d/orbien restart
+```
+
 ## 详细说明见各个目标子目录
 
 分为旁路由固件和硬件路由固件。

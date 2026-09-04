@@ -1,0 +1,3 @@
+config orbien 'main'
+	option enabled '0'
+	option config '/etc/orbien/orbien.toml'
