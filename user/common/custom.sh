@@ -67,6 +67,10 @@ do_common() {
     rm -rf package/luci-app-tailscale-community
     dl_git_sub https://github.com/Tokisaki-Galaxy/luci-app-tailscale-community package/luci-app-tailscale-community luci-app-tailscale-community master
 
+    # replace the LEDE tailscale package with GuNanOvO's latest source package
+    rm -rf package/tailscale
+    dl_git_sub https://github.com/GuNanOvO/openwrt-tailscale package/tailscale package/tailscale main
+
     # move tailscale menu from Services to VPN
     find package/luci-app-tailscale-community -path '*/menu.d/*.json' | while read f; do
         sed -i 's|"admin/services/tailscale"|"admin/vpn/tailscale"|g' "$f"

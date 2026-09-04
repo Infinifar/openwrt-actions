@@ -108,10 +108,6 @@ do_prepare() {
         find "user/${target}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d '${code_dir}' -p0 --forward"
     fi
 
-    # --------------------- Add Tailscale feed
-    echo "Info: Add Tailscale feed..."
-    echo "src-git opentailscale https://github.com/GuNanOvO/openwrt-tailscale.git;feed" >> ${code_dir}/feeds.conf.default
-
     # --------------------- Update feeds
     echo "Info: Update feeds..."
     cd ${GITHUB_WORKSPACE}/${code_dir}

@@ -158,9 +158,6 @@ jobs:
           )
           fi
 
-      - name: Add Tailscale feed
-        run: echo "src-git opentailscale https://github.com/GuNanOvO/openwrt-tailscale.git;feed" >> openwrt/feeds.conf.default
-
       - name: Update feeds
         run: cd openwrt && ./scripts/feeds update -a
 
