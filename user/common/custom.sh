@@ -37,11 +37,6 @@ do_common() {
     rm -rf package/luci-theme-argon-jerrykuku
     dl_git https://github.com/jerrykuku/luci-theme-argon package/luci-theme-argon-jerrykuku
 
-    # replace feeds/luci/applications/luci-app-smartdns
-    # rm -rf package/luci-app-smartdns
-    # dl_git https://github.com/pymumu/luci-app-smartdns package/luci-app-smartdns
-    # sed -i 's#../../luci.mk#$(TOPDIR)/feeds/luci/luci.mk#g' package/luci-app-smartdns/Makefile
-
     # add/replace feeds/luci/applications/luci-app-mosdns
     rm -rf package/luci-app-mosdns
     dl_git_sub https://github.com/sbwml/luci-app-mosdns package/luci-app-mosdns luci-app-mosdns v5
@@ -50,10 +45,7 @@ do_common() {
     rm -rf package/mosdns
     dl_git_sub https://github.com/sbwml/luci-app-mosdns package/mosdns mosdns v5
     rm -rf package/mosdns/patches
-    # use fork repo before PR accepted
-    # sed -i 's/^PKG_VERSION.*/PKG_VERSION:=7d80823/g' package/mosdns/Makefile
     sed -i 's#IrineSistiana/mosdns/tar#alecthw/mosdns/tar#g' package/mosdns/Makefile
-    # sed -i 's#v$(PKG_VERSION)#$(PKG_VERSION)#g' package/mosdns/Makefile
     sed -i 's/^PKG_HASH.*/PKG_HASH:=skip/g' package/mosdns/Makefile
 
     # add openclash | replace feeds/luci/applications/luci-app-openclash
@@ -61,15 +53,15 @@ do_common() {
     dl_git_sub https://github.com/vernesong/OpenClash package/luci-app-openclash luci-app-openclash master
     sed -i "/dashboard_password/d" package/luci-app-openclash/root/etc/uci-defaults/luci-openclash
 
-    # add OpenAppFilter
-    # rm -rf package/OpenAppFilter
-    # dl_git https://github.com/destan19/OpenAppFilter package/OpenAppFilter
-
     # add luci-app-fancontrol
     rm -rf package/luci-app-fancontrol
     dl_git_sub https://github.com/rockjake/luci-app-fancontrol package/luci-app-fancontrol luci-app-fancontrol
     rm -rf package/fancontrol
     dl_git_sub https://github.com/rockjake/luci-app-fancontrol package/fancontrol fancontrol
+
+    # add luci-app-nginx (LuCI interface for Nginx management)
+    rm -rf package/luci-app-nginx
+    dl_git https://github.com/arenekosreal/luci-app-nginx package/luci-app-nginx
 
     # add luci-app-tailscale-community
     rm -rf package/luci-app-tailscale-community
