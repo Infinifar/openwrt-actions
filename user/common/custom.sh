@@ -48,6 +48,10 @@ do_common() {
     sed -i 's#IrineSistiana/mosdns/tar#alecthw/mosdns/tar#g' package/mosdns/Makefile
     sed -i 's/^PKG_HASH.*/PKG_HASH:=skip/g' package/mosdns/Makefile
 
+    # luci-app-mosdns requires geo2txt at image installation time.
+    rm -rf package/geo2txt
+    dl_git_sub https://github.com/sbwml/luci-app-mosdns package/geo2txt geo2txt v5
+
     # add openclash | replace feeds/luci/applications/luci-app-openclash
     rm -rf package/luci-app-openclash
     dl_git_sub https://github.com/vernesong/OpenClash package/luci-app-openclash luci-app-openclash master
