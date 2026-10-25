@@ -5,7 +5,17 @@ log:
   level: info
   file: "/tmp/mosdns.log"
 
+# LuCI statistics API. Keep it bound to loopback; rpcd queries it locally.
+api:
+  http: "127.0.0.1:9091"
+
 plugins:
+  # Query statistics collector used by the LuCI statistics page.
+  - tag: stats_collector
+    type: stats_api
+    args:
+      capacity: 2000
+
   # mmdb
   - tag: country
     type: mmdb
@@ -37,6 +47,9 @@ plugins:
   - tag: hosts
     type: hosts
     args:
+      files:
+        - "/etc/mosdns/rule/hosts.txt"
+        - "/etc/mosdns/rule/adguard-lan-hosts.txt"
       entries:
         - "localhost 127.0.0.1"
 
@@ -45,30 +58,29 @@ plugins:
     type: cache
     args:
       size: 20480
-      lazy_cache_ttl: 86400
-      dump_file: "/etc/mosdns/cache.dump"
+      # Serve stale data for at most five minutes while refreshing it in the
+      # background.  A 24-hour window kept obsolete DDNS answers alive.
+      lazy_cache_ttl: 300
+      # Cache data is disposable and should not write the persistent rootfs.
+      dump_file: "/tmp/mosdns-cache.dump"
       dump_interval: 1800
 
   # 查询境外DNS
-  - tag: forward_global_dot
+  - tag: forward_global_doh
     type: forward
     args:
       concurrent: 3
       upstreams:
-        - tag: Google_dot
-          addr: "tls://dns.google"
+        - tag: Google_doh
+          addr: "https://dns.google/dns-query"
           dial_addr: "8.8.4.4"
           enable_pipeline: true
-        - tag: Cloudflare_dot
-          addr: "tls://one.one.one.one"
-          dial_addr: "1.0.0.1"
+        - tag: Cloudflare_doh
+          addr: "https://cloudflare-dns.com/dns-query"
+          dial_addr: "1.1.1.1"
           enable_pipeline: true
-        - tag: OpenDNS_dot
-          addr: "tls://dns.opendns.com"
-          dial_addr: "208.67.222.222"
-          enable_pipeline: true
-        - tag: AdGuardDNS_dot
-          addr: "tls://unfiltered.adguard-dns.com"
+        - tag: AdGuardDNS_doh
+          addr: "https://unfiltered.adguard-dns.com/dns-query"
           dial_addr: "94.140.14.140"
           enable_pipeline: true
 
@@ -78,25 +90,24 @@ plugins:
     args:
       concurrent: 2
       upstreams:
-        # - tag: Ali_dot
-        #   addr: "tls://dns.alidns.com"
-        #   dial_addr: "223.5.5.5"
-        #   enable_pipeline: false
         - tag: DNSPod_dot
           addr: "tls://dot.pub"
           dial_addr: "120.53.53.53"
           enable_pipeline: true
-        - tag: OneDNS_dot
-          addr: "tls://dot-pure.onedns.net"
-          dial_addr: "54.223.159.81"
-          enable_pipeline: true
+        - tag: Ali_dot
+          addr: "tls://dns.alidns.com"
+          dial_addr: "223.5.5.5"
+          enable_pipeline: false
+        # Do not restore OneDNS here.  It returned filter.onedns.net addresses
+        # for Let's Encrypt CRL/issuer hosts; because those were CN IPs, the
+        # CN-IP acceptance rule below treated the poisoned answer as valid.
 
   # 境外解析，优先IPv4，不设置过滤，作为fallback
   - tag: global_sequence
     type: sequence
     args:
       - exec: prefer_ipv4
-      - exec: $forward_global_dot
+      - exec: $forward_global_doh
 
   # 国内解析
   - tag: china_sequence
@@ -118,6 +129,14 @@ plugins:
   - tag: reject_sequence
     type: sequence
     args:
+      # OpenClash intentionally has no IPv6 forwarding path. HTTPS/SVCB
+      # records can still advertise ipv6hint even when AAAA is disabled.
+      # Limit NODATA to OpenAI's domains; keep A/AAAA and unrelated ECH intact.
+      # NOERROR (0), not NXDOMAIN (3): the hostname itself still exists.
+      - matches:
+          - qtype 64 65
+          - qname domain:openai.com domain:chatgpt.com domain:oaistatic.com domain:oaiusercontent.com domain:openai.com.cdn.cloudflare.net domain:chatgpt.com.cdn.cloudflare.net
+        exec: reject 0
       - matches: qname $geosite_ads
         exec: reject 3
       - matches: qtype 12
@@ -139,6 +158,8 @@ plugins:
   - tag: main_sequence
     type: sequence
     args:
+      - exec: $stats_collector
+
       - exec: $reject_sequence
 
       - exec: $hosts
@@ -157,4 +178,12 @@ plugins:
     type: udp_server
     args:
       entry: main_sequence
-      listen: 0.0.0.0:5335
+      listen: 127.0.0.1:5335
+
+  # TCP is required when a DNS response is truncated over UDP. Keep both
+  # listeners local so LAN clients cannot bypass AdGuardHome filtering.
+  - tag: tcp_server
+    type: tcp_server
+    args:
+      entry: main_sequence
+      listen: 127.0.0.1:5335

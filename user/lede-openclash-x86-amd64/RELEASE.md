@@ -1,5 +1,3 @@
-- Default IP: `192.168.11.4/24`
-- Default GW: `192.168.11.1`
-- Default Password: `no password`
+# Public template
 
-Other apps default password is usually `password`
+No personal accounts, proxy nodes, VPN identities or production network settings are bundled.

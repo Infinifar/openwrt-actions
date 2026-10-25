@@ -1,0 +1,7 @@
+/etc/AdGuardHome/
+/etc/config/adguardhome
+/etc/config/AdGuardHome
+/etc/config/tailscale
+/etc/tailscale/
+/etc/mosdns/config_custom.yaml
+/etc/mosdns/rule/hosts.txt

@@ -1,114 +1,27 @@
 #!/bin/sh
-
-# cumtos ntp
-uci delete system.ntp.server
-uci add_list system.ntp.server='ntp1.aliyun.com'
-uci add_list system.ntp.server='ntp.tencent.com'
-uci add_list system.ntp.server='ntp.ntsc.ac.cn'
-uci add_list system.ntp.server='time.apple.com'
-# uci set system.ntp.enable_server='1'
-uci commit system
-
-# set default theme
+# Public first boot: retain upstream LAN/DHCP/SSH/firewall topology.
+# BEGIN personal Argon defaults
 theme=argon
-# theme=design
-# theme=material
-if [ -d "/www/luci-static/$theme" ]; then
+if [ -s "/www/luci-static/$theme/css/cascade.css" ] &&
+   [ -s "/usr/share/ucode/luci/template/themes/$theme/header.ut" ] &&
+   [ -s "/usr/share/ucode/luci/template/themes/$theme/footer.ut" ] &&
+   [ -s "/usr/share/ucode/luci/template/themes/$theme/sysauth.ut" ]; then
+    uci set luci.themes.Argon=/luci-static/$theme
     uci set luci.main.mediaurlbase=/luci-static/$theme
-    uci commit luci
-fi
-
-# detect network version
-new_net=true
-if [ -n "$(uci -q get network.lan.type)" ]; then
-    new_net=false
-fi
-
-# network
-uci delete network.globals.ula_prefix
-uci delete network.wan
-uci delete network.wan6
-
-# lan
-uci delete network.lan.ip6assign
-uci set network.lan.ipaddr='192.168.11.4'
-uci set network.lan.netmask='255.255.255.0'
-uci set network.lan.gateway='192.168.11.1'
-uci -q delete network.lan.dns
-uci add_list network.lan.dns='223.5.5.5'
-uci add_list network.lan.dns='114.114.114.114'
-
-# lan6
-uci set network.lan6=interface
-if $new_net; then
-    uci set network.lan6.device='@lan'
-else
-    uci set network.lan6.ifname='@lan'
-fi
-uci set network.lan6.proto='dhcpv6'
-uci set network.lan6.reqaddress='try'
-uci set network.lan6.reqprefix='auto'
-uci set network.lan6.peerdns='0'
-uci add_list firewall.@zone[0].network='lan6'
-
-# add zerotier interface
-if [ -f "/etc/config/zerotier" ]; then
-    uci set network.zerotier=interface
-    if $new_net; then
-        uci set network.zerotier.device='zt5u4x7t2c'
-    else
-        uci set network.zerotier.ifname='zt5u4x7t2c'
+    if uci -q get 'argon.@global[0]' >/dev/null; then
+        uci set 'argon.@global[0].online_wallpaper=none'
+        uci commit argon
     fi
-    uci set network.zerotier.proto='none'
-    uci set network.zerotier.delegate='0'
-    uci set network.zerotier.auto='1'
-    uci add_list firewall.@zone[0].network='zerotier'
+    uci commit luci
+else
+    logger -t lede-personal 'Argon resources missing; leaving the current LuCI theme unchanged.'
 fi
+# END personal Argon defaults
 
-uci commit network
-uci commit firewall
-
-# dhcp
-uci set dhcp.lan.ignore=1
-uci delete dhcp.lan.start
-uci delete dhcp.lan.limit
-uci delete dhcp.lan.leasetime
-uci delete dhcp.lan.ra
-uci delete dhcp.lan.dhcpv6
-uci delete dhcp.lan.ndp
-
-# disable dnsmasq dns cache
-uci set dhcp.@dnsmasq[0].dns_redirect='0'
-uci set dhcp.@dnsmasq[0].cachesize='0'
-uci add_list dhcp.@dnsmasq[0].server='127.0.0.1#5335'
-# modify default port, adguardhome use 53
-uci set dhcp.@dnsmasq[0].port='3553'
-
-uci commit dhcp
-
-# disable redirect https
-uci set uhttpd.main.redirect_https='0'
-uci commit uhttpd
-
-# remove feeds repository
-sed -i '/helloworld/d' /etc/opkg/distfeeds.conf
-sed -i '/passwall/d' /etc/opkg/distfeeds.conf
-sed -i '/nikki/d' /etc/opkg/distfeeds.conf
-
-# move menu
-sed -i 's/\"services\"/\"control\"/g' /usr/lib/lua/luci/controller/appfilter.lua
-sed -i 's/\"services\"/\"control\"/g' /usr/lib/lua/luci/controller/mia.lua
-
-# anti-ad auto update for smartdns
-# if [ -f "/etc/smartdns/anti-ad.sh" ]; then
-#     echo "0 5 * * * /etc/smartdns/anti-ad.sh > /dev/null 2>&1 &" >>/etc/crontabs/root
-# fi
-
-# rules auto update for mosdns
-if [ -f "/etc/mosdns/update_rules.sh" ]; then
-    echo "30 6 * * * /etc/mosdns/update_rules.sh" >>/etc/crontabs/root
-fi
-
-uci commit
-
+# Empty public identity/account templates must not start exposed services.
+for service in AdGuardHome adguardhome openclash tailscale beszel-agent zerotier; do
+    if [ -x "/etc/init.d/$service" ]; then
+        "/etc/init.d/$service" disable
+    fi
+done
 exit 0

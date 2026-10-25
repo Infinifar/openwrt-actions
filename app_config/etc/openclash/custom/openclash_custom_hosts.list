@@ -1,0 +1,8 @@
+# Static hosts for DNS server and connection establishment (like /etc/hosts)
+#
+# Non-wildcard domain names have a higher priority than wildcard domain names
+# P.S. +.foo.com equals to .foo.com and foo.com
+
+#  '*.clash.dev': 127.0.0.1
+#  '.dev': 127.0.0.1
+#  'alpha.clash.dev': '::1'

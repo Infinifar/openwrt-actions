@@ -1,0 +1,7 @@
+config turboacc 'global'
+	option set '1'
+
+config turboacc 'config'
+	option tcpcca 'cubic'
+	option fastpath 'disabled'
+	option fullcone '0'

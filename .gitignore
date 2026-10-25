@@ -1,3 +1,8 @@
+# Generated local build files
+.build/
+.ci-logs/
+Firmware/
+
 # Log File
 *.log
 
@@ -8,6 +13,9 @@
 *.ori
 *.orig
 *.tmp
+backup-LEDE-*/
+backup-LEDE-*.tar.gz
+Firmware-local/
 
 
 # Jetbrains

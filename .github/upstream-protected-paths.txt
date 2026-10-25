@@ -1,0 +1,17 @@
+# Paths below always keep this fork's version during automatic upstream sync.
+.gitignore
+.github/upstream-protected-paths.txt
+.github/workflows/sync-upstream.yml
+.gitlab-ci.yml
+AGENTS.md
+README.md
+scripts
+ci
+manual-restore
+app_config
+app_config.sh
+localbuild.sh
+user/common/custom.sh
+user/common/files
+user/lede-common-n1-arm64
+user/lede-openclash-x86-amd64

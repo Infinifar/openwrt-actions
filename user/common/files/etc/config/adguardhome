@@ -1,6 +1,8 @@
 config adguardhome 'config'
 	option config_file '/etc/AdGuardHome/AdGuardHome.yaml'
-	option work_dir '/etc/AdGuardHome'
+	option work_dir '/etc/AdGuardHome/work'
+	# Keep the work directory writable in the native service sandbox.
+	list jail_mount_rw '/etc/AdGuardHome/work'
 	option user 'adguardhome'
 	option group 'adguardhome'
 	option verbose '0'

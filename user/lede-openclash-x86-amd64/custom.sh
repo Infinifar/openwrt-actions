@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Execute after install feeds
 # patch -> [update & install feeds] -> custom -> config
 

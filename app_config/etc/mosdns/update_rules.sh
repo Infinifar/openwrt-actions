@@ -43,5 +43,5 @@ rm -rf ${tmp_dir}
 
 # restart service
 /etc/init.d/mosdns stop
-rm -rf /etc/mosdns/cache.dump
+rm -f /tmp/mosdns-cache.dump /etc/mosdns/cache.dump
 /etc/init.d/mosdns start

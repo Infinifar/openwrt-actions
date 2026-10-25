@@ -1,0 +1,64 @@
+#!/bin/sh
+# Versioned hook migrates UCI/YAML restored by a keep-settings upgrade.
+set -eu
+umask 077
+config_dir=/etc/AdGuardHome
+config_file="$config_dir/AdGuardHome.yaml"
+backup_dir="$config_dir/.before-persistence-v2"
+etc_dir=/etc
+awk_script=/usr/share/adguardhome/persist-settings.awk
+
+# uci-defaults runs before enabled services. Refuse manual edits to a live YAML.
+if pidof AdGuardHome >/dev/null 2>&1; then
+	logger -t adguardhome-persist 'Stop AdGuard Home before rerunning this migration'
+	exit 1
+fi
+test -f "$config_file"
+test ! -L "$config_file"
+for directory in "$config_dir" "$backup_dir"; do
+	test ! -L "$directory"
+done
+mkdir -p "$backup_dir"
+chmod 0700 "$backup_dir"
+for source in "$config_file" "$etc_dir/config/adguardhome" "$etc_dir/config/AdGuardHome"; do
+	[ -f "$source" ] || continue
+	target="$backup_dir/$(basename "$source")"
+	test ! -L "$target"
+	[ -e "$target" ] || cp -p "$source" "$target"
+done
+
+staged=$(mktemp "$config_dir/.persistence.XXXXXX")
+trap 'rm -f "$staged" "$staged.metadata"' EXIT HUP INT TERM
+# Fail on unexpected/duplicate/missing fields before replacing the saved YAML.
+if ! awk -f "$awk_script" "$config_file" > "$staged"; then
+	logger -t adguardhome-persist 'Unsupported YAML layout; original configuration retained'
+	exit 1
+fi
+chmod 0600 "$staged"
+/etc/init.d/adguardhome-storage enable
+/etc/init.d/adguardhome-storage start
+
+# Retain all unrelated settings in the restored UCI.
+uci -q get adguardhome.config >/dev/null
+uci set adguardhome.config.work_dir='/etc/AdGuardHome/work'
+uci -q del_list adguardhome.config.jail_mount_rw='/var/lib/adguardhome' || true
+uci -q del_list adguardhome.config.jail_mount_rw='/etc/AdGuardHome/work' || true
+uci add_list adguardhome.config.jail_mount_rw='/etc/AdGuardHome/work'
+if uci -q get AdGuardHome.AdGuardHome >/dev/null; then
+	uci set AdGuardHome.AdGuardHome.workdir='/etc/AdGuardHome/work'
+	uci commit AdGuardHome
+fi
+uci commit adguardhome
+# Retain mode/ownership and atomically replace beside the destination.
+cp -p "$config_file" "$staged.metadata"
+cat "$staged" > "$staged.metadata"
+mv "$staged.metadata" "$config_file"
+if id adguardhome >/dev/null 2>&1; then
+	chown adguardhome:adguardhome "$config_file"
+fi
+
+touch "$etc_dir/sysupgrade.conf"
+if ! grep -qxF '/etc/AdGuardHome/' "$etc_dir/sysupgrade.conf"; then
+	printf '\n/etc/AdGuardHome/\n' >> "$etc_dir/sysupgrade.conf"
+fi
+exit 0

@@ -1,160 +1,49 @@
-# OpenWRT 编译 (含 Tailscale)
+# OpenWrt / LEDE 公开配置模板
 
-[![build-openwrt](https://github.com/alecthw/openwrt-actions/actions/workflows/build-openwrt.yml/badge.svg)](https://github.com/alecthw/openwrt-actions/actions/workflows/build-openwrt.yml)
-[![build-n1](https://github.com/alecthw/openwrt-actions/actions/workflows/build-n1.yml/badge.svg)](https://github.com/alecthw/openwrt-actions/actions/workflows/build-n1.yml)
+这是经过脱敏的构建模板，不是任何生产路由器的恢复包。它保留可复用的构建、DNS、策略组及校验代码；私有部署仓库与设备不受本仓库更新影响。
 
-> Fork 自 [alecthw/openwrt-actions](https://github.com/alecthw/openwrt-actions)，仅保留 `lede-openclash-x86-amd64` 和 `lede-common-n1-arm64`，并集成 Tailscale。
+## 保留的功能
 
-每周五自动构建新版本。
+- OpenClash / Mihomo、独立更新的 Zashboard，以及 AI、US-AI、Google、Docker 策略和规则。
+- AdGuard Home 规则磁盘持久化、每天更新，MosDNS 同源 hosts 同步与缓存优化。
+- 基于 alecthw 修改版的 MosDNS，补充 stats_api；源码固定引用公开的 [Infinifar/mosdns](https://github.com/Infinifar/mosdns)。
+- Tailscale nftables 默认选项、connmark 依赖、LuCI 应用与防火墙重载兼容补丁。
+- ZeroTier、Beszel Agent 安装支持，Argon 主题依赖及安装完整性校验。
+- x86 的 QEMU Guest Agent；ShadowSocksR Plus 保持禁用。
 
-专注制作旁路由精简固件，稳定运行！
+## 本公开版刻意不包含
 
-旁路由固件默认 IP 地址：
-默认 IP: `192.168.11.4/24`
-默认 GW: `192.168.11.1`
+代理订阅和节点、账号密码及密码哈希、VPN 登录状态和私钥、ZeroTier 网络身份、Beszel 授权、私人域名/IP/MAC、生产防火墙和网络拓扑、个人壁纸、原始备份与私有 GitLab 提交历史。
 
-密码: `没有密码`，其他如有涉及默认密码的都是 `password`
+- 订阅文件只有 `proxies: []`，三个配置保留禁用的 Subscribe4AI HTTP 订阅示例。
+- Tailscale 不通告子网/出口，不启用中继，也没有登录状态；ZeroTier/Beszel 不自动加入或连接任何网络。
+- OpenClash、AdGuard、VPN、监控服务默认不自动启用。AdGuard 管理地址及配置中的 Mihomo 外控仅监听回环地址。
+- 开机模板不覆盖上游的 LAN 地址、网关、MAC、DHCP 和 SSH 登录设置。
+- Argon 使用无个人内容、无元数据的纯色占位图，仍校验主题真实安装与依赖。
 
-## Tailscale 集成
+不要把本模板视为“刷入即可复原”的个人固件。首次部署必须自行设置密码、导入节点、配置网络和服务，然后再启用对应服务。不要将填写后的文件推回公开仓库。
 
-本分支已集成 Tailscale，包含：
-- **Tailscale 二进制**：通过 [GuNanOvO/openwrt-tailscale](https://github.com/GuNanOvO/openwrt-tailscale) feed 编译
-- **LUCI 界面**：[luci-app-tailscale-community](https://github.com/Tokisaki-Galaxy/luci-app-tailscale-community)（菜单位于 VPN 分类下）
-- **UDP GRO 优化**：首次启动自动开启 `rx-gro-list`，消除 Tailscale UDP GRO 转发警告
-- **状态持久化**：`TS_STATE_DIR=/etc/tailscale/state`，节点密钥和登录状态不会因重启丢失
-
-## Orbien 集成
-
-固件内置 [Orbien](https://github.com/orbien-org/orbien) 最新 release 的静态 musl 客户端（x86_64 和 arm64），用于内网穿透。公网服务端不内置，建议部署在 VPS。
-
-编辑 `/etc/orbien/orbien.toml` 填入服务端和隧道配置，再启用服务：
+## 获取与校验
 
 ```sh
-uci set orbien.main.enabled='1'
-uci commit orbien
-/etc/init.d/orbien enable
-/etc/init.d/orbien restart
-```
-
-## 详细说明见各个目标子目录
-
-分为旁路由固件和硬件路由固件。
-
-注意：旁路由固件默认未开启 DHCP！！！旁路由固件默认未开启 DHCP！！！旁路由固件默认未开启 DHCP！！！
-
-可以参考：[在后台使用命令行修改 IP 地址和掩码](#命令行修改-ip-和掩码)
-
-### 旁路由固件
-
-重点是 AdGuardHome 、 mosdns 和 openclash （或 ssrp ）的搭配，详细介绍见子目录下的 README。更多信息可以参考[这篇文章](https://alecthw.github.io/p/2023/11/fuck-gfw/)。
-
-#### 基于 LEDE 构建
-
-- [LEDE 源码](https://github.com/coolsnowwolf/lede)
-
-| 说明 | 下载 |
-|---|---|
-| [lede-openclash-x86-amd64](user/lede-openclash-x86-amd64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-openclash-x86-amd64) |
-| [lede-common-n1-arm64](user/lede-common-n1-arm64/README.md) | [Release](https://github.com/alecthw/openwrt-actions/releases/tag/lede-common-n1-arm64) |
-
-#### 特别说明
-
-##### 1. DHCP 服务器
-
-一般情况下建议禁用旁路由的 DHCP 服务器，在主路由配置 DHCP 服务器，把网关设置成旁路由，或者通过静态分配指定不同客户端指向不同网关。
-
-**由于旁路由 openclash 专属固件默认未设置 53 端口劫持，所以 DHCP 服务器设置中的 DNS 服务器，务必设置成旁路由，不要设置公共 DNS。
-
-##### 2. IPv6
-
-主路由上**请勿通告 IPv6 DNS 服务器**（这里指 IPv6 地址的 DNS 服务器，如 2400:3200::1）。通过 IPv4 地址的 DNS 服务器解析域名，一样可以拿到 AAAA 记录，所以没必要开启 IPv6 地址的 DNS 服务器，开启反而会增加配置难度，影响 DNS 分流，并可能造成 DNS 泄露。
-
-Openwrt、iKuai、RouterOS 都是支持不通告 IPv6 DNS 的。如果你的主路由不支持，IPv6 DNS 可以填个无效地址，如 `::1`
-
-##### 3. 开启 openclash 后 DNS 异常问题
-
-参考：[Clash 订阅引起 DNS 问题的说明](https://github.com/alecthw/openwrt-actions/blob/master/user/lede-common-x86-amd64/README.md#clash-%E8%AE%A2%E9%98%85%E5%BC%95%E8%B5%B7-dns-%E9%97%AE%E9%A2%98%E7%9A%84%E8%AF%B4%E6%98%8E)
-
-## 命令行修改 IP 和掩码
-
-注意，旁路由固件默认未开启 DHCP，旁路由固件默认未开启 DHCP，旁路由固件默认未开启 DHCP！
-
-所以，如果不在控制台修改 IP，请修改电脑的 IP 访问，然后可以在网页修改。
-
-```bash
-# 作为旁路路由，IP 不建议设置 1，防止和主路由冲突！
-# 命令行修改 IP 示例：
-uci set network.lan.ipaddr='192.168.1.2'
-uci set network.lan.netmask='255.255.255.0'
-uci set network.lan.gateway='192.168.1.1'
-uci commit network
-```
-
-## 编译和固件个性化流程说明
-
-1. 导出 `Settings.ini` 内容为环境变量
-2. 克隆 OpenWRT 源码
-3. 安装 `user/common/patches`和`user/[target]/patches` 目录下的补丁
-4. 添加 Tailscale feed（`src-git opentailscale https://github.com/GuNanOvO/openwrt-tailscale.git;feed`）
-5. 更新 feeds，Update feeds
-6. 复制 `user/common/files` 和 `user/[target]/files` 到 `[OpenWRT Code Dir]/files`，注意后者覆盖前者
-7. 执行脚本 `user/common/custom.sh` 和 `user/[target]/custom.sh`
-8. 安装 feeds，Install feeds
-9. 执行 `app_config.sh` 脚本，对插件做自定义，包括下载部分插件需要的二进制执行文件，例如 `clash` 和 `AdGuardHome`
-10. 开始编译
-
-## 本地构建指南
-
-使用 [act](https://nektosact.com/) 本地执行 workflow 进行构建。
-
-### 准备环境 Ubuntu 2204
-
-```bash
-sudo apt update -y
-sudo apt full-upgrade -y
-sudo apt install -y ack antlr3 aria2 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pip python3-pyelftools libpython3-dev qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev clang llvm npm
-```
-
-### 安装 act
-
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin
-```
-
-或参考官方文档：[act install](https://nektosact.com/installation/index.html)
-
-### 构建
-
-```bash
-git clone <your-fork-url>.git
+git clone --recurse-submodules https://github.com/Infinifar/openwrt-actions.git
 cd openwrt-actions
-act \
-    -r
-    -P ubuntu-22.04=-self-hosted \
-    -a alecthw \
-    -W '.github/workflows/build-openwrt.yml' \
-    --matrix target:lede-openclash-x86-amd64 \
-    workflow_dispatch
+python3 -B scripts/validate-public-config.py
+bash scripts/validate-personal-config.sh
 ```
 
-matrix `target` 是 user 目录下下除 common 以外的文件夹名。
+需要 Python 3 + PyYAML、Ruby 和 Node.js。兼容入口 validate-personal-config.sh 在公开版校验的是“无账号、无设备身份、无生产重写”的安全模板，同时保留功能回归；不是要求导入个人配置。
 
-## ext4 扩容（如 SD-Card 空间未使用）
+GitHub Actions 中的 x86 / N1 构建均只接受手动触发；普通 push 不自动编译。公开版依赖不需要任何私有源码部署令牌。构建和发布使用 GitHub 提供的 GITHUB_TOKEN，不要求填写个人访问令牌。此次公开同步没有编译固件。
 
-需要 `fdisk resize2fs losetup`，`r2s, zero3, filogic` 固件已预置。
+本地编译入口为 localbuild.sh，请先查看其用法并提供足够磁盘空间。公开模板未作为完整固件重新编译或刷机验收，不能将离线校验当作硬件兼容证明。
 
-### 查看分区，记录数据分区起始扇区
+## 自行部署时
 
-```bash
-fdisk -l
-```
+1. 设置路由器管理密码，确认 LAN/DHCP/防火墙符合自己的拓扑。
+2. 配置 AdGuard 的本地账号、监听地址和需要的精确重写；默认重写列表为空。DNS 链路涉及 OpenClash 7874 / MosDNS 5335，先配置完整链路再启用 AdGuard。
+3. 在本地导入订阅，并设置 Mihomo 外控密钥和允许访问范围；US-AI 需要名称匹配的节点，空组按原规则拒绝回退。
+4. 按需登录 Tailscale、加入 ZeroTier，填写 Beszel hub/key/token；不要复用别人的设备状态文件。
+5. 同源 DNS 示例默认使用 example.com 域名范围，部署时将同步脚本里的示例范围替换成自己的域名；不要另做相互循环的 DNS 转发。
 
-## 转换工具下载
-
-- StarWind V2V Converter: [Download link](https://www.starwindsoftware.com/tmplink/starwindconverter.exe)
-
-## 链接
-
-- [chnlist](https://github.com/alecthw/chnlist)
-- [coolsnowwolf lede](https://github.com/coolsnowwolf/lede)
-- [immortalwrt](https://github.com/immortalwrt/immortalwrt)
+代码和外部组件的来源见 [CREDITS.md](CREDITS.md)，脱敏范围及检查边界见 [PUBLICATION.md](PUBLICATION.md)。原构建项目的 MIT 许可证保留，各子项目遵循自己的许可证；MosDNS 为 GPL-3.0。

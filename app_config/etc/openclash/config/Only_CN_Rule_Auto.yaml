@@ -18,7 +18,7 @@ bind-address: "*"
 #   - 192.168.0.3/32
 
 #  find-process-mode has 3 values: always, strict, off
-find-process-mode: strict
+find-process-mode: 'off'
 
 mode: rule
 
@@ -37,7 +37,7 @@ geo-update-interval: 12
 
 log-level: error
 
-ipv6: true
+ipv6: false
 
 # tls:
 #   certificate: string
@@ -48,9 +48,9 @@ ipv6: true
 #       format/pem...
 #       -----END CERTIFICATE-----
 
-external-controller: 0.0.0.0:9093
+external-controller: 127.0.0.1:9090
 # external-controller-tls: 0.0.0.0:9443
-secret: password
+secret: ""
 
 # external-controller-cors:
 #   allow-origins:
@@ -70,9 +70,6 @@ tcp-concurrent: true
 # external-doh-server: /dns-query
 
 # interface-name: eth0
-
-# options: "chrome", "firefox", "safari", "ios", "random", "none"
-global-client-fingerprint: chrome
 
 # disable-keep-alive: false
 # keep-alive-idle: 15
@@ -179,7 +176,7 @@ dns:
   enable: true
   # prefer-h3: true
   listen: 0.0.0.0:7874
-  ipv6: true
+  ipv6: false
   # ipv6-timeout: 300
   default-nameserver:
     - 223.5.5.5
@@ -230,11 +227,10 @@ dns:
 
 proxy-providers:
   Subscribe:
-    type: http
-    url: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/alecthw/chnlist/main/config/Node/stash
+    # Empty local provider: add a subscription after flashing the firmware.
+    type: file
     # filter: ^(?!.*(Direct|Ad-|返利|机场|每月|流量|到期|重置|官网|网址))
     exclude-filter: (?i)(Direct|Ad-|返利|机场|每月|流量|到期|重置|官网|网址)
-    interval: 43200
     path: ./proxy_provider/Subscribe.yaml
     health-check:
       enable: true
@@ -242,9 +238,21 @@ proxy-providers:
       # lazy: true
       url: http://cp.cloudflare.com/generate_204
 
+  # HTTP(S) 订阅示例：默认禁用，取消注释后将 url 替换为实际订阅链接。
+  # Subscribe4AI:
+  #   type: http
+  #   url: "https://example.com/Subscribe4AI.yaml"
+  #   path: ./proxy_provider/Subscribe4AI.yaml
+  #   interval: 86400
+  #   health-check:
+  #     enable: true
+  #     url: http://cp.cloudflare.com/generate_204
+  #     interval: 1800
+  #     lazy: true
+
 proxy-groups:
   - name: Proxy
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Rocket.png
+    icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/png/clash.png
     type: select
     proxies:
       - DIRECT
@@ -255,13 +263,13 @@ proxy-groups:
       - 🇺🇳 Special
       - 🛫 Airport
   - name: Domestic
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Direct.png
+    icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/png/router.png
     type: select
     proxies:
       - DIRECT
       - Proxy
   - name: AdBlock
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Advertising.png
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/adguard-home.png
     type: select
     proxies:
       - REJECT
@@ -270,17 +278,60 @@ proxy-groups:
       - Proxy
       - PASS
 
+  # Dedicated service routing
+  - name: AI
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/openai.png
+    type: select
+    # Choose a country, or US-AI to pin a filtered leaf even in Auto profiles.
+    proxies:
+      - 🇺🇸 US
+      - 🇭🇰 HK
+      - 🇸🇬 SG
+      - 🇯🇵 JP
+      - US-AI
+    empty-fallback: REJECT
+  - name: Google
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/google.png
+    type: select
+    proxies:
+      - Proxy
+      - 🇺🇸 US
+      - 🇸🇬 SG
+      - 🇯🇵 JP
+      - 🇭🇰 HK
+      - Domestic
+      - US-AI
+  - name: Docker
+    icon: https://cdn.jsdelivr.net/gh/selfhst/icons/png/docker.png
+    type: select
+    proxies:
+      - Proxy
+      - Domestic
+      - 🇺🇸 US
+      - 🇸🇬 SG
+      - 🇯🇵 JP
+      - 🇭🇰 HK
+
   # Final
   - name: Final
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Final.png
+    icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/png/openwrt.png
     type: select
     proxies:
       - Proxy
       - Domestic
 
+  # Manual San Jose subset; provider health checks do not switch this selection.
+  - name: US-AI
+    icon: https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/United_States.png
+    type: select
+    include-all-providers: true
+    include-all-proxies: true
+    filter: '^(?=.*美国圣何塞)(?=.*[567]).*$'
+    empty-fallback: REJECT
+
   # Area
   - name: 🇭🇰 HK
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Hong_Kong.png
+    icon: https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png
     type: url-test
     url: http://cp.cloudflare.com/generate_204
     interval: 300
@@ -288,7 +339,7 @@ proxy-groups:
     include-all-providers: true
     filter: (?i)(港|HK|Hong)
   - name: 🇸🇬 SG
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Singapore.png
+    icon: https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Singapore.png
     type: url-test
     url: http://cp.cloudflare.com/generate_204
     interval: 300
@@ -296,7 +347,7 @@ proxy-groups:
     include-all-providers: true
     filter: (?i)(新加坡|坡|狮城|SG|Singapore)
   - name: 🇯🇵 JP
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Japan.png
+    icon: https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Japan.png
     type: url-test
     url: http://cp.cloudflare.com/generate_204
     interval: 300
@@ -304,7 +355,7 @@ proxy-groups:
     include-all-providers: true
     filter: (?i)((\b日((?!用).)+)|日本|川日|东京|大阪|泉日|埼玉|沪日|深日|JP|Japan)
   - name: 🇺🇸 US
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/United_States.png
+    icon: https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/United_States.png
     type: url-test
     url: http://cp.cloudflare.com/generate_204
     interval: 300
@@ -313,18 +364,24 @@ proxy-groups:
     filter: (?i)(\b美|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|\bUS|(United States))
 
   - name: 🇺🇳 Special
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/United_Nations.png
+    icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/png/networking-toolbox.png
     type: select
     include-all-providers: true
     filter: ^(?i)(?!.*(港|HK|Hong|新加坡|坡|狮城|SG|Singapore|(\b日((?!用).)+)|日本|川日|东京|大阪|泉日|埼玉|沪日|深日|JP|Japan|\b美|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|\bUS|(United States)))
 
   # All
   - name: 🛫 Airport
-    icon: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Airport.png
+    icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/png/air-trail.png
     type: select
     include-all-providers: true
 
 rules:
+  # Only AI/Google domains: keep TCP, other UDP ports and unrelated QUIC unchanged.
+  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,google)),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,openai)),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,anthropic)),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,github-copilot)),REJECT-DROP
+  - AND,((NETWORK,UDP),(DST-PORT,443),(OR,((DOMAIN-SUFFIX,antigravity.google),(DOMAIN-SUFFIX,copilot.microsoft.com),(DOMAIN-SUFFIX,sydney.bing.com),(DOMAIN-SUFFIX,edgeservices.bing.com),(DOMAIN-SUFFIX,services.bingapis.com),(DOMAIN-SUFFIX,gateway.bingviz.microsoft.net),(DOMAIN-SUFFIX,gateway.bingviz.microsoftapp.net),(DOMAIN-SUFFIX,openai.com),(DOMAIN-SUFFIX,chatgpt.com),(DOMAIN-SUFFIX,oaistatic.com),(DOMAIN-SUFFIX,oaiusercontent.com),(DOMAIN-SUFFIX,openai.com.cdn.cloudflare.net),(DOMAIN-SUFFIX,chatgpt.com.cdn.cloudflare.net)))),REJECT-DROP
   # - PROCESS-NAME,zerotier-one,DIRECT
 
   # Local network, should be resolve
@@ -346,13 +403,20 @@ rules:
   - RULE-SET,Apple_Domain,Domestic
 
   # Download
+  - RULE-SET,DockerHubExtra,Docker
+  - RULE-SET,Docker,Docker
   - RULE-SET,Download,Domestic
   - RULE-SET,GameDownloadCN,Domestic
   - RULE-SET,GameDownload,Domestic
 
   # APP
+  # AI rules must precede Google because Gemini uses Google domains.
+  - RULE-SET,OpenAI,AI
+  - RULE-SET,Claude,AI
+  - RULE-SET,Gemini,AI
+  - RULE-SET,Copilot,AI
+  - RULE-SET,Google,Google
   - RULE-SET,Speedtest,Domestic
-  - RULE-SET,OpenAI,🇺🇸 US
 
   # China Media
   - RULE-SET,ChinaMedia,Domestic
@@ -440,6 +504,20 @@ rule-providers:
     interval: 43200
 
   # Download
+  DockerHubExtra:
+    type: http
+    behavior: domain
+    format: mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/docker.mrs
+    path: ./rule_provider/DockerHubExtra.mrs
+    interval: 43200
+  Docker:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Docker/Docker.yaml
+    path: ./rule_provider/Docker.yaml
+    interval: 43200
   Download:
     type: http
     behavior: classical
@@ -471,6 +549,34 @@ rule-providers:
     behavior: classical
     url: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/OpenAI/OpenAI.yaml
     path: ./rule_provider/OpenAI.yaml
+    interval: 43200
+  Claude:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Claude/Claude.yaml
+    path: ./rule_provider/Claude.yaml
+    interval: 43200
+  Gemini:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Gemini/Gemini.yaml
+    path: ./rule_provider/Gemini.yaml
+    interval: 43200
+  Copilot:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Copilot/Copilot.yaml
+    path: ./rule_provider/Copilot.yaml
+    interval: 43200
+  Google:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://ghproxy.wegod.cc/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Google/Google.yaml
+    path: ./rule_provider/Google.yaml
     interval: 43200
 
   # China Media

@@ -40,25 +40,31 @@ dl_svn() {
 # $2: target dir
 # $3: branch
 dl_git() {
+    local repo_url=$1
+    local dest_dir=$2
+    local branch=${3:-}
+    local tmp_dir
     tmp_dir=$(mktemp -d)
 
-    if [ -z $3 ]; then
-        git clone -q --depth=1 --single-branch $1 $tmp_dir/tmp
+    if [ -z "$branch" ]; then
+        git clone -q --depth=1 --single-branch "$repo_url" "$tmp_dir/tmp"
     else
-        git clone -q --depth=1 --single-branch -b $3 $1 $tmp_dir/tmp
+        git clone -q --depth=1 --single-branch -b "$branch" "$repo_url" "$tmp_dir/tmp"
     fi
 
-    if [ $? == 0 ]; then
-        echo "Info: Git download success: $1"
-        rm -rf $tmp_dir/tmp/.git
+    if [ $? = 0 ]; then
+        echo "Info: Git download success: ${repo_url} @ $(git -C "$tmp_dir/tmp" rev-parse --short=12 HEAD)"
+        rm -rf "$tmp_dir/tmp/.git"
 
-        mkdir -p $2
-        cp -af $tmp_dir/tmp/* $2/
+        mkdir -p "$dest_dir"
+        cp -af "$tmp_dir/tmp/." "$dest_dir/"
     else
-        echo "Error: Git download fail: $1"
+        echo "Error: Git download fail: ${repo_url}"
+        rm -rf "$tmp_dir"
+        return 1
     fi
 
-    rm -rf $tmp_dir
+    rm -rf "$tmp_dir"
 }
 
 # $1: git url
@@ -66,38 +72,54 @@ dl_git() {
 # $3: sub dir
 # $4: branch
 dl_git_sub() {
+    local repo_url=$1
+    local dest_dir=$2
+    local sub_dir=${3:-}
+    local branch=${4:-}
+    local cache_key tmp_dir src_dir
+
     mkdir -p /tmp/opbuild
 
-    url_brahch_hash=$(echo "$1/tree/$4" | md5sum | cut -c 1-6)
+    cache_key=$(printf '%s' "${repo_url}/tree/${branch}" | md5sum | cut -c 1-12)
+    tmp_dir="/tmp/opbuild/${cache_key}"
 
-    tmp_dir=/tmp/opbuild/$url_brahch_hash
-
-    if [ ! -d "$tmp_dir" ];then
-        if [ -z $4 ]; then
-            git clone -q --depth=1 --single-branch $1 $tmp_dir
+    if [ ! -d "$tmp_dir/.git" ]; then
+        rm -rf "$tmp_dir"
+        if [ -z "$branch" ]; then
+            git clone -q --depth=1 --single-branch "$repo_url" "$tmp_dir" || return 1
         else
-            git clone -q --depth=1 --single-branch -b $4 $1 $tmp_dir
+            git clone -q --depth=1 --single-branch -b "$branch" "$repo_url" "$tmp_dir" || return 1
         fi
     else
-        echo "Warn: Git-sub download aleady exist: $1/tree/$4"
+        git -C "$tmp_dir" remote set-url origin "$repo_url" || return 1
+        if [ -z "$branch" ]; then
+            git -C "$tmp_dir" fetch -q --depth=1 origin HEAD || return 1
+        else
+            git -C "$tmp_dir" fetch -q --depth=1 origin "$branch" || return 1
+        fi
+        git -C "$tmp_dir" reset -q --hard FETCH_HEAD || return 1
+        git -C "$tmp_dir" clean -q -fdx || return 1
     fi
 
-    if [ $? == 0 ]; then
-        echo "Info: Git-sub download success: $1/tree/$4/$3"
-        src_dir=$tmp_dir
+    if [ $? = 0 ]; then
+        echo "Info: Git-sub download success: ${repo_url}/tree/${branch}/${sub_dir} @ $(git -C "$tmp_dir" rev-parse --short=12 HEAD)"
+        src_dir="$tmp_dir"
 
-        if [ -n $3 ]; then
-            src_dir=$tmp_dir/$3
+        if [ -n "$sub_dir" ]; then
+            src_dir="$tmp_dir/$sub_dir"
         fi
 
-        if [ -e $src_dir ]; then
-            mkdir -p $2
-            cp -af $src_dir/* $2/
+        if [ -e "$src_dir" ]; then
+            mkdir -p "$dest_dir"
+            cp -af "$src_dir/." "$dest_dir/"
+            rm -rf "$dest_dir/.git"
         else
-            echo "Error: Git-sub copy fail not exist: $src_dir"
+            echo "Error: Git-sub copy source does not exist: ${src_dir}"
+            return 1
         fi
     else
-        echo "Error: Git-sub download fail: $1/tree/$4/$3"
+        echo "Error: Git-sub download fail: ${repo_url}/tree/${branch}/${sub_dir}"
+        return 1
     fi
 }
 

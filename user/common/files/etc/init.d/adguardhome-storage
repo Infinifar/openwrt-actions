@@ -1,0 +1,45 @@
+#!/bin/sh /etc/rc.common
+# Prepare persistent storage before the native service (START=19).
+START=18
+
+start() {
+	config_dir=/etc/AdGuardHome
+	runtime_dir=/var/lib/adguardhome
+	work_dir="$config_dir/work"
+	filter_dir="$work_dir/data/filters"
+
+	for directory in "$config_dir" "$work_dir" "$work_dir/data" "$filter_dir"; do
+		if [ -L "$directory" ]; then
+			logger -t adguardhome-storage 'Persistent storage must use real directories'
+			return 1
+		fi
+	done
+	mkdir -p "$filter_dir" || return 1
+	chmod 0700 "$config_dir" "$work_dir" "$work_dir/data" "$filter_dir" || return 1
+
+	# Prefer the old disk layout over tmpfs. Retain sources and newer copies.
+	# Do not migrate query logs/statistics.
+	for legacy_root in "$config_dir" "$runtime_dir"; do
+		legacy_filters="$legacy_root/data/filters"
+		[ -d "$legacy_filters" ] || continue
+		[ ! -L "$legacy_root" ] && [ ! -L "$legacy_root/data" ] &&
+			[ ! -L "$legacy_filters" ] || continue
+		for source in "$legacy_filters"/*; do
+			[ -f "$source" ] && [ ! -L "$source" ] || continue
+			destination="$filter_dir/${source##*/}"
+			[ ! -e "$destination" ] && [ ! -L "$destination" ] || continue
+			staged=$(mktemp "$filter_dir/.migrate.XXXXXX") || return 1
+			if cp -p "$source" "$staged" && mv "$staged" "$destination"; then
+				:
+			else
+				rm -f "$staged"
+				return 1
+			fi
+		done
+	done
+
+	if id adguardhome >/dev/null 2>&1; then
+		chown -R adguardhome:adguardhome "$config_dir" || return 1
+	fi
+	return 0
+}

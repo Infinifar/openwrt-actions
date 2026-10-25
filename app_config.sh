@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Execute after install feeds as the last script
 # patch -> [update & install feeds] -> custom -> config
 
@@ -39,14 +41,6 @@ if [ -d "$GITHUB_WORKSPACE/$APP_CONFIG_DIR" ]; then
         copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/config/autoreboot package/feeds/luci/luci-app-autoreboot/root/etc/config/autoreboot
     fi
 
-    if [ -d "package/feeds/packages/ddns-scripts" ]; then
-        copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/config/ddns package/feeds/packages/ddns-scripts/files/etc/config/ddns
-    fi
-
-    if [ -d "package/feeds/packages/nginx-util" ]; then
-        copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/config/nginx package/feeds/packages/nginx-util/files/nginx.config
-    fi
-
     LUCI_APP_SMARTDNS_DIR=""
     if [ -d "package/luci-app-smartdns" ]; then
         LUCI_APP_SMARTDNS_DIR="package/luci-app-smartdns"
@@ -78,6 +72,14 @@ if [ -d "$GITHUB_WORKSPACE/$APP_CONFIG_DIR" ]; then
         copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/mosdns/config_custom.yaml $LUCI_APP_MOSDNS_DIR/root/etc/mosdns/config_custom.yaml
         copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/mosdns/update_rules.sh $LUCI_APP_MOSDNS_DIR/root/etc/mosdns/update_rules.sh
         chmod 755 $LUCI_APP_MOSDNS_DIR/root/etc/mosdns/update_rules.sh
+
+        # One source of truth for both client DNS and proxy-side resolution.
+        ruby "$GITHUB_WORKSPACE/user/common/files/usr/share/mosdns/sync-adguard-hosts.rb" sync \
+            "$GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/AdGuardHome/AdGuardHome.yaml" \
+            "$LUCI_APP_MOSDNS_DIR/root/etc/mosdns/rule/adguard-lan-hosts.txt" \
+            "$LUCI_APP_MOSDNS_DIR/root/etc/mosdns/rule/hosts.txt"
+        python3 -B "$GITHUB_WORKSPACE/scripts/patch-mosdns-lan-hosts.py" \
+            "$LUCI_APP_MOSDNS_DIR/root/etc/init.d/mosdns"
 
         # download rules
         dl_curl https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/reject-list.txt $LUCI_APP_MOSDNS_DIR/root/etc/mosdns/rule/reject-list.txt
@@ -114,6 +116,9 @@ if [ -d "$GITHUB_WORKSPACE/$APP_CONFIG_DIR" ]; then
 
         # config runtime config file
         copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/openclash/config $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/config
+        copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/openclash/custom $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/custom
+        copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/openclash/proxy_provider $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/proxy_provider
+        find $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/custom -type f -name '*.sh' -exec chmod 755 {} \;
 
         openclash_arch="${build_arch}"
         case "${build_arch}" in
@@ -127,13 +132,17 @@ if [ -d "$GITHUB_WORKSPACE/$APP_CONFIG_DIR" ]; then
 
         # download latest clash meta core
         mkdir -p $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/core
-        clash_meta_version=$(curl -kLs "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+        clash_meta_version=$(curl -fsSL --retry 3 -o /dev/null -w '%{url_effective}' https://github.com/MetaCubeX/mihomo/releases/latest | sed 's#.*/tag/##')
         echo "clash_meta_version: ${clash_meta_version}"
         # mihomo-linux-amd64-compatible-v1.17.0.gz
         dl_curl https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-${openclash_arch}-${clash_meta_version}.gz $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/core/clash_meta.gz
 
         gzip -f -d $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/core/clash_meta.gz
         chmod 755 $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/core/clash_meta
+
+        # Refresh independently of OpenClash's bundled UI snapshot. Errors are
+        # fatal; the helper verifies the official digest and local entry assets.
+        python3 "$GITHUB_WORKSPACE/scripts/update-zashboard.py" install "$LUCI_APP_OPENCLASH_DIR"
 
         # update geosite
         rm -rf $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/GeoSite.dat
@@ -153,6 +162,9 @@ if [ -d "$GITHUB_WORKSPACE/$APP_CONFIG_DIR" ]; then
         mv -f $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/rule_provider/rules/**/*.yaml $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/rule_provider
         rm -rf $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/rule_provider/rules
         dl_git_sub https://github.com/alecthw/chnlist $LUCI_APP_OPENCLASH_DIR/root/etc/openclash/rule_provider Providers/Custom release
+        # Bundle the domain/MRS supplement, too: first boot must not require
+        # an online ruleset download. Refresh errors must fail this build.
+        bash "$GITHUB_WORKSPACE/scripts/update-docker-rules.sh" "$LUCI_APP_OPENCLASH_DIR/root/etc/openclash/rule_provider"
     fi
 
     if [ -d "package/feeds/luci/luci-app-turboacc" ]; then
@@ -182,5 +194,9 @@ if [ -d "$GITHUB_WORKSPACE/$APP_CONFIG_DIR" ]; then
         if [ -f "$GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/config/zero.tar.gz" ]; then
             tar xzf $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/config/zero.tar.gz -C $ZEROTIER_DIR/files/etc/config/
         fi
+    fi
+
+    if [ -f "package/beszel-agent/files/beszel-agent.config" ]; then
+        copy_s $GITHUB_WORKSPACE/$APP_CONFIG_DIR/etc/config/beszel-agent package/beszel-agent/files/beszel-agent.config
     fi
 fi

@@ -1,0 +1,20 @@
+#!/bin/sh
+# Keep LAN routes local when GL and LEDE advertise the same subnet.
+set -eu
+umask 077
+config_file=/etc/config/tailscale
+test -f "$config_file"
+test ! -L "$config_file"
+backup_file="$config_file.before-lan-policy-v1"
+test ! -L "$backup_file"
+[ -e "$backup_file" ] || cp -p "$config_file" "$backup_file"
+uci -q get tailscale.settings >/dev/null
+uci set tailscale.settings.accept_routes='0'
+uci commit tailscale
+# The bundled service reapplies UCI after tailscaled starts (START=99).
+/etc/init.d/tailscale-settings enable
+# If manually rerun after boot, alter only this live preference.
+if pidof tailscaled >/dev/null 2>&1; then
+	tailscale set --accept-routes=false
+fi
+exit 0

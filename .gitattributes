@@ -1,6 +1,9 @@
 # Common
 * text eol=lf
 
+# Approved private identity backups: preserve bytes and suppress plaintext diffs.
+manual-restore/**/*.state -text -diff
+
 # Windows Scripts
 *.bat      text eol=crlf
 *.cmd      text eol=crlf
@@ -43,6 +46,7 @@
 *.7z binary
 *.gz binary
 *.jar binary
+*.metadb binary
 *.rar binary
 *.tar binary
 *.zip binary

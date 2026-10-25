@@ -1,0 +1,5 @@
+config zerotier 'global'
+    option enabled '0'
+    option secret ''
+    option port '9993'
+# Set a network ID after installation. Leave config_path/local_conf_path unset.
