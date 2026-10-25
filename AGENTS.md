@@ -8,5 +8,6 @@
 - Keep firmware workflows manual-only. Ordinary pushes must not compile, release or synchronize upstream automatically.
 - Retain existing OpenClash AI/US-AI, scoped QUIC, Docker routing, MosDNS hosts, Tailscale compatibility and Argon dependency gates.
 - Approved public first-boot networking: LAN 192.168.11.4, gateway 192.168.11.1, idempotent deletion of logical WAN/WAN6, and dhcp.lan.ignore=1 (IPv4 DHCP off). Keep exact-allowlist and isolated boot tests.
-- Do not restore LAN6/RA/DHCPv6, dnsmasq port/upstream, MAC or SSH customization without further approval. Deleting WAN6 does not globally disable IPv6.
+- Also approved: LAN6 DHCPv6 client on LAN (device/legacy ifname), removal of LAN ip6assign, request address/prefix without peer DNS, LAN-zone membership; dnsmasq port3553, DNS redirection/cache off and local MosDNS upstream127.0.0.1#5335. Keep list additions idempotent.
+- RA/DHCPv6 server settings, private MAC/SSH and device identities remain outside the approved public defaults. LAN6 is not the proxy IPv6 switch.
 - Do not change private repositories or live routers while maintaining this public template.

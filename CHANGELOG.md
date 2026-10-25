@@ -2,6 +2,8 @@
 
 ## 2026-10-25
 
+- Third follow-up: restore approved LAN6 DHCPv6-client and dnsmasq3553/cache-off/MosDNS5335 forwarding defaults; retain empty identity/account templates. Update allowlist and fixtures without running extra checks, as requested; manually build the public x86 template.
+
 - Second follow-up: also delete logical WAN/WAN6 idempotently and disable LAN IPv4 DHCP as explicitly approved; keep IPv6 and DNS customization pending. Extend isolated boot/negative regression checks.
 
 - Follow-up: retain only user-approved public LAN 192.168.11.4 and gateway 192.168.11.1. Add exact allowlist and isolated first-boot tests; do not restore production DHCP/WAN/IPv6 settings.

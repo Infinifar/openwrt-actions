@@ -11,7 +11,8 @@
 - 清空 Mihomo 外控密钥、代理认证与私人面板域名；代理和监控服务默认关闭。
 - 移除 ZeroTier 身份/网络 ID、Beszel key/token/hub、私人域名及未授权的 IP/网卡设备名。
 - 后续按用户明确要求，公开保留 LAN 地址192.168.11.4及网关192.168.11.1；再追加删除逻辑 WAN/WAN6、关闭 LAN IPv4 DHCP。上述为首次初始化设置，删除不存在的接口可重复执行。
-- IPv6 LAN6/RA/DHCPv6、dnsmasq 端口/上游、MAC/SSH 暂未恢复；本次关闭 IPv4 DHCP 不等于关闭 IPv6 地址通告。
+- 用户随后批准恢复LAN6 DHCPv6客户端及dnsmasq配套：LAN绑定、获取上游IPv6配置且不接受上游DNS，dnsmasq3553/缓存关闭/本地MosDNS5335上游；保留不含凭据的接口与端口参数。
+- RA/DHCPv6服务端、私人MAC/SSH仍未恢复。此次按用户要求不执行额外检测；手动构建GitHub公开模板，不修改私有源或现役设备，不持续监控。
 - 用纯色占位 PNG/SVG 替换个人壁纸，不保留原图和元数据。
 - 删除私有 GitLab CI、Runner 部署资料；公开依赖改为 GitHub MosDNS。
 - 重写 README/发布说明，不复制个人运维记录或私人邮箱。

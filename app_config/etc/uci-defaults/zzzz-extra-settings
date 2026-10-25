@@ -7,10 +7,36 @@ uci -q delete network.wan6 || true
 if uci -q get network.lan >/dev/null; then
     uci set network.lan.ipaddr='192.168.11.4'
     uci set network.lan.gateway='192.168.11.1'
+    # Receive IPv6 configuration on LAN rather than delegate our own LAN prefix.
+    uci -q delete network.lan.ip6assign || true
+    uci set network.lan6=interface
+    if [ -n "$(uci -q get network.lan.type)" ]; then
+        uci set network.lan6.ifname='@lan'
+    else
+        uci set network.lan6.device='@lan'
+    fi
+    uci set network.lan6.proto='dhcpv6'
+    uci set network.lan6.reqaddress='try'
+    uci set network.lan6.reqprefix='auto'
+    uci set network.lan6.peerdns='0'
+    if [ "$(uci -q get firewall.@zone[0].name)" = "lan" ]; then
+        uci -q del_list firewall.@zone[0].network='lan6' || true
+        uci add_list firewall.@zone[0].network='lan6'
+        uci commit firewall
+    fi
     uci commit network
 fi
 if uci -q get dhcp.lan >/dev/null; then
     uci set dhcp.lan.ignore='1'
+    uci commit dhcp
+fi
+# Reserve DNS port 53 for AdGuard; dnsmasq forwards locally without caching.
+if uci -q get dhcp.@dnsmasq[0] >/dev/null; then
+    uci set dhcp.@dnsmasq[0].port='3553'
+    uci set dhcp.@dnsmasq[0].dns_redirect='0'
+    uci set dhcp.@dnsmasq[0].cachesize='0'
+    uci -q del_list dhcp.@dnsmasq[0].server='127.0.0.1#5335' || true
+    uci add_list dhcp.@dnsmasq[0].server='127.0.0.1#5335'
     uci commit dhcp
 fi
 # END approved public LAN defaults

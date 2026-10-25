@@ -58,7 +58,22 @@ def main():
         "uci -q delete network.wan6 || true",
         "uci set network.lan.ipaddr='192.168.11.4'",
         "uci set network.lan.gateway='192.168.11.1'",
+        "uci -q delete network.lan.ip6assign || true",
+        "uci set network.lan6=interface",
+        "uci set network.lan6.ifname='@lan'",
+        "uci set network.lan6.device='@lan'",
+        "uci set network.lan6.proto='dhcpv6'",
+        "uci set network.lan6.reqaddress='try'",
+        "uci set network.lan6.reqprefix='auto'",
+        "uci set network.lan6.peerdns='0'",
+        "uci -q del_list firewall.@zone[0].network='lan6' || true",
+        "uci add_list firewall.@zone[0].network='lan6'",
         "uci set dhcp.lan.ignore='1'",
+        "uci set dhcp.@dnsmasq[0].port='3553'",
+        "uci set dhcp.@dnsmasq[0].dns_redirect='0'",
+        "uci set dhcp.@dnsmasq[0].cachesize='0'",
+        "uci -q del_list dhcp.@dnsmasq[0].server='127.0.0.1#5335' || true",
+        "uci add_list dhcp.@dnsmasq[0].server='127.0.0.1#5335'",
     ]
     mutations = [line.strip() for line in boot.splitlines()
                  if re.match(r"\s*uci(?:\s+-\S+)*\s+(?:set|add_list|del_list|delete|rename|reorder)\s+(?:network|dhcp|dropbear|firewall)\.",line)]
