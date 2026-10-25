@@ -69,10 +69,40 @@ class PublicTemplateTests(unittest.TestCase):
         self.check(edit)
 
     def test_network_override_is_rejected(self):
+        for command in [
+            "uci set network.lan.ipaddr=\'192.0.2.1\'",
+            "uci set network.lan.macaddr=\'02:00:00:00:00:01\'",
+            "uci set dhcp.lan.ignore=\'1\'",
+            "uci -q delete network.wan",
+            "uci set dropbear.main.Port=\'2222\'",
+        ]:
+            with self.subTest(command=command):
+                def edit(t):
+                    p=t/'app_config/etc/uci-defaults/zzzz-extra-settings'
+                    p.write_text(p.read_text()+"\n"+command+"\n")
+                self.check(edit)
+
+    def test_missing_approved_lan_default_is_rejected(self):
         def edit(t):
             p=t/'app_config/etc/uci-defaults/zzzz-extra-settings'
-            p.write_text(p.read_text()+"\nuci set network.lan.ipaddr='192.0.2.1'\n")
+            p.write_text(p.read_text().replace("    uci set network.lan.gateway=\'192.168.11.1\'\n",""))
         self.check(edit)
+
+    def test_approved_boot_block_only_sets_ip_and_gateway(self):
+        source=(ROOT/"app_config/etc/uci-defaults/zzzz-extra-settings").read_text()
+        block=source.split("# BEGIN approved public LAN defaults\n",1)[1].split("# END approved public LAN defaults",1)[0]
+        mock='uci() { printf "%s\\n" "$*"; };\n'
+        result=subprocess.run(["sh","-s"],input=mock+block,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(result.stdout.splitlines(),["set network.lan.ipaddr=192.168.11.4","set network.lan.gateway=192.168.11.1","commit network"])
+
+    def test_approved_boot_block_skips_missing_lan(self):
+        source=(ROOT/"app_config/etc/uci-defaults/zzzz-extra-settings").read_text()
+        block=source.split("# BEGIN approved public LAN defaults\n",1)[1].split("# END approved public LAN defaults",1)[0]
+        mock='uci() { if [ "$1" = "-q" ]; then return 1; fi; printf "%s\\n" "$*"; };\n'
+        result=subprocess.run(["sh","-s"],input=mock+block,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(result.stdout,"")
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

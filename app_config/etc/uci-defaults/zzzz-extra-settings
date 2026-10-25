@@ -1,5 +1,13 @@
 #!/bin/sh
-# Public first boot: retain upstream LAN/DHCP/SSH/firewall topology.
+# Public first boot: only the explicitly approved LAN address/gateway are fixed.
+# BEGIN approved public LAN defaults
+if uci -q get network.lan >/dev/null; then
+    uci set network.lan.ipaddr='192.168.11.4'
+    uci set network.lan.gateway='192.168.11.1'
+    uci commit network
+fi
+# END approved public LAN defaults
+
 # BEGIN personal Argon defaults
 theme=argon
 if [ -s "/www/luci-static/$theme/css/cascade.css" ] &&

@@ -9,7 +9,8 @@
 - 删除嵌入的 Tailscale 状态、手动恢复目录、完整代理节点和私有运维文档。
 - 清空 AdGuard 用户/密码哈希、精确域名重写与持久客户端；管理服务默认关闭且绑定回环。
 - 清空 Mihomo 外控密钥、代理认证与私人面板域名；代理和监控服务默认关闭。
-- 移除 ZeroTier 身份/网络 ID、Beszel key/token/hub、私人域名/IP/网卡设备名。
+- 移除 ZeroTier 身份/网络 ID、Beszel key/token/hub、私人域名及未授权的 IP/网卡设备名。
+- 后续按用户明确要求，公开保留 LAN 地址192.168.11.4及网关192.168.11.1；仅恢复这两个首次初始化字段，不恢复其余 WAN/DHCP/IPv6/MAC/SSH 专用设置。
 - 用纯色占位 PNG/SVG 替换个人壁纸，不保留原图和元数据。
 - 删除私有 GitLab CI、Runner 部署资料；公开依赖改为 GitHub MosDNS。
 - 重写 README/发布说明，不复制个人运维记录或私人邮箱。
