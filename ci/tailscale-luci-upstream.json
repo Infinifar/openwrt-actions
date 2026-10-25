@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/Tokisaki-Galaxy/luci-app-tailscale-community",
+  "branch": "master",
+  "reviewed_commit": "a7057cb209b8000e97cb8bc3e56fec4b26a1f27b",
+  "issue": 81,
+  "fix_merge_commit": "7b6869492fc0545039b41cc77eae6d2138f4f3ee",
+  "fetch_policy": "Refresh master on every build; this record is not a source pin; fail on refresh/contract errors"
+}

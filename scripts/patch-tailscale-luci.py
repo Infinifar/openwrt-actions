@@ -1,98 +1,88 @@
 #!/usr/bin/env python3
-"""Apply reviewed compatibility fixes to the freshly fetched community LuCI UI.
+"""Keep upstream #80/#81 fixes; apply only remaining firmware compatibility guards.
 
-Exact anchors fail closed on upstream changes; never silently use an old package.
-No Tailscale identity, live router, firewall backend or relay policy is changed.
+Always consume fresh master. Missing/changed upstream contracts fail the build;
+never restore the legacy local UI/worker or fall back to a cached package.
 """
 import argparse
 import json
 from pathlib import Path
-import shutil
 
 REPO = Path(__file__).resolve().parents[1]
 RPC = 'root/usr/share/rpcd/ucode/tailscale.uc'
 VIEW = 'htdocs/luci-static/resources/view/tailscale.js'
 INIT = 'root/etc/init.d/tailscale-settings'
 ACL = 'root/usr/share/rpcd/acl.d/luci-app-tailscale-community.json'
-MARKER = '// lede-personal: detached firewall apply v1'
+WORKER = 'root/usr/libexec/tailscale-setup-firewall'
+MARKER = '// firmware compatibility: upstream #81 v2'
 
 def once(text, old, new):
     if text.count(old) != 1:
         raise ValueError('Tailscale upstream layout changed; reviewed anchor is missing or ambiguous: ' + old[:90])
     return text.replace(old, new, 1)
 
-def patch_sources(rpc, view, init, acl):
+def require(text, tokens):
+    for token in tokens:
+        if token not in text:
+            raise ValueError('Fresh Tailscale upstream fix contract missing: ' + token)
+
+def patch_sources(rpc, view, init, acl, worker):
     if MARKER in rpc:
         raise ValueError('Tailscale fixes must be applied only to freshly fetched upstream sources')
+    require(rpc, ['methods.get_firewall_status =', 'methods.set_service_enabled =',
+                  '/usr/libexec/tailscale-setup-firewall', 'run_id: run_id'])
+    require(view, ['function unwrapRpc(', 'function pollFirewallJob(',
+                   'callGetFirewallStatus', 'callSetServiceEnabled', 'countPending(changes)'])
+    require(init, ['tailscale_running()', 'sync_service_enabled()', 'daemon_signature()',
+                   'procd_add_reload_trigger "tailscale"'])
+    require(worker, ['write_state()', 'lock_age()', 'mkdir "$LOCK_DIR"'])
+    permissions = json.loads(acl)['luci-app-tailscale-community']
+    if 'get_firewall_status' not in permissions['read']['ubus']['tailscale']:
+        raise ValueError('Fresh upstream firewall status ACL is missing')
+    # Upstream owns the status RPC, UI, lock and service lifecycle. Never install
+    # the former local tailscale.actions/get_apply_status/reload implementation.
+    rpc = once(rpc, "'use strict';", "'use strict';\n\n" + MARKER)
+    # Upstream's new status-file handoff calls fs.rename; import it explicitly.
+    rpc = once(rpc, "import { access, popen, readfile, writefile, unlink } from 'fs';",
+               "import { access, popen, readfile, writefile, unlink, rename } from 'fs';")
     for service in ('network', 'firewall'):
-        rpc = once(rpc, f"\n\t\t\t\texec('/etc/init.d/{service} reload');", '')
         rpc = once(rpc, f"\t\t\t\tuci.commit('{service}');",
                    f"\t\t\t\tif (!uci.commit('{service}')) return {{ error: 'Could not commit {service} configuration' }};")
-    anchor = "\n\t\t\treturn {\n\t\t\t\tsuccess: true,\n\t\t\t\tchanged_network: changed_network,"
-    rpc = once(rpc, anchor, """
-            // lede-personal: detached firewall apply v1
-            let queued = exec('/usr/libexec/tailscale-community-reload queue '
-                + (changed_network ? '1' : '0') + ' ' + (changed_firewall ? '1' : '0'));
-            if (queued.code != 0) return { error: 'Could not queue reload; an apply may already be running' };
-            return {
-                queued: true,
-\t\t\t\tsuccess: true,
-\t\t\t\tchanged_network: changed_network,"""
-    )
-    rpc = once(rpc, 'methods.get_logs = {', """methods.get_apply_status = {
-    call: function() {
-        let status = trim(readfile('/var/run/tailscale-luci-apply/status') || 'unknown');
-        return { status: status };
-    }
-};
-
-methods.get_logs = {"""
-    )
     rpc = once(rpc, "let login_cmd = 'tailscale login '+join(' ', loginargs);",
                "let login_cmd = 'tailscale login '+join(' ', loginargs) + ' && /etc/init.d/tailscale-settings reload';")
-    view = once(view, "'require tools.widgets as widgets';", "'require tools.widgets as widgets';\n'require tailscale.actions as tailscaleActions';")
-    start = view.index('\t\tfwBtn.onclick = function() {')
-    end = view.index("\n\t\tconst helpTitle =", start)
-    old = view[start:end]
-    if old.count('callSetupFirewall()') != 1:
-        raise ValueError('Unexpected firewall button implementation')
-    view = once(view, old, '\t\tfwBtn.onclick = function() {\n\t\t\treturn tailscaleActions.configureFirewall(map);\n\t\t};\n')
-    init = once(init, '\t\t/etc/init.d/tailscale start 2>/dev/null',
-                '\t\t# start_service runs tailscaled --cleanup: do not call it on a running daemon.\n'
-                '\t\tif ! pidof tailscaled >/dev/null 2>&1; then\n'
-                '\t\t\t/etc/init.d/tailscale start 2>/dev/null || return $?\n'
-                '\t\tfi')
     init = once(init, '\t"$ts_bin" "$@"', '\ttimeout 30 "$ts_bin" "$@"')
-    # Re-enabling the UI setting must undo a previously selected netfilter=off.
     init = once(init, '\t\tset -- "$@" --netfilter-mode=off\n\tfi',
                 '\t\tset -- "$@" --netfilter-mode=off\n\telse\n\t\tset -- "$@" --netfilter-mode=on\n\tfi')
-    permissions = json.loads(acl)
-    read_methods = permissions['luci-app-tailscale-community']['read']['ubus']['tailscale']
-    if 'get_apply_status' in read_methods:
-        raise ValueError('Unexpected existing apply status method')
-    read_methods.append('get_apply_status')
-    return rpc, view, init, json.dumps(permissions, indent=2) + '\n'
+    # Bound the upstream worker and delay its first reload until the RPC returns.
+    worker = once(worker, 'write_state running network "Reloading network"',
+                  'sleep 2\nwrite_state running network "Reloading network"')
+    for service in ('network', 'firewall'):
+        worker = once(worker, f'if ! /etc/init.d/{service} reload >/dev/null 2>&1; then',
+                      f'if ! timeout 45 /etc/init.d/{service} reload >/dev/null 2>&1; then')
+    worker = once(worker, 'write_state done done "Firewall configuration applied"',
+                  '''write_state running settings "Applying Tailscale settings"
+if ! timeout 45 /etc/init.d/tailscale-settings reload >/dev/null 2>&1; then
+    write_state failed settings "Tailscale settings reload failed"
+    trap - EXIT HUP INT TERM
+    rm -rf "$LOCK_DIR"
+    exit 1
+fi
+write_state done done "Firewall configuration applied"''')
+    view = once(view, 'return pollFirewallJob(res.run_id);',
+                'return pollFirewallJob(res.run_id, 180);')
+    return rpc, view, init, acl, worker
 
 def prepare(tree):
     package = tree / 'package/luci-app-tailscale-community'
-    paths = [package / name for name in (RPC, VIEW, INIT, ACL)]
-    # Validate every anchor before touching any file.
+    paths = [package / name for name in (RPC, VIEW, INIT, ACL, WORKER)]
     updated = patch_sources(*(p.read_text() for p in paths))
+    # All contracts/anchors are checked before any source file is changed.
     for path, content in zip(paths, updated):
         path.write_text(content)
-    assets = {
-        'reload.sh': 'root/usr/libexec/tailscale-community-reload',
-        'actions.js': 'htdocs/luci-static/resources/tailscale/actions.js',
-    }
-    for source, destination in assets.items():
-        target = package / destination
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(REPO / 'user/common/tailscale' / source, target)
-        target.chmod(0o755 if source.endswith('.sh') else 0o644)
-    print('Info: Tailscale LuCI detached reload, login reconciliation and running-daemon guard installed')
+    (package / WORKER).chmod(0o755)
+    print('Info: upstream Tailscale #80/#81 UI, status and lifecycle retained; bounded firmware guards installed')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('tree', type=Path)
-    args = parser.parse_args()
-    prepare(args.tree.resolve())
+    prepare(parser.parse_args().tree.resolve())

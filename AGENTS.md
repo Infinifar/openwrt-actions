@@ -1,4 +1,5 @@
 # Public OpenWrt template rules
+- Refresh Tailscale LuCI master for every build, retaining upstream #80/#81 UI/status/worker/lifecycle. Apply only exact-anchor residual firmware guards; reject missing fix contracts and never reinstall the old local UI/worker. ci/tailscale-luci-upstream.json records review provenance, not a frozen source pin. Keep this public template free of identities/subscriptions/credentials.
 
 - This is the sanitized public repository. Never copy private GitLab history, identities, subscriptions, accounts, production network inventories or raw backups into it.
 - Keep public templates empty by default: no Tailscale state/manual restore, proxy nodes, ZeroTier network IDs or Beszel credentials. Keep unconfigured services disabled and management APIs loopback-only.

@@ -90,7 +90,8 @@ do_common() {
     # replace the LEDE tailscale package with GuNanOvO's latest source package
     rm -rf package/tailscale
     dl_git_sub https://github.com/GuNanOvO/openwrt-tailscale package/tailscale package/tailscale main
-    # Reviewed UI compatibility fixes, always after the fresh upstream checkout.
+    # Keep upstream #80/#81 UI/worker/lifecycle; only residual firmware guards.
+    # Review provenance: ci/tailscale-luci-upstream.json (not a source pin).
     python3 -B "$GITHUB_WORKSPACE/scripts/test-tailscale-luci.py" --upstream "$PWD/package/luci-app-tailscale-community"
     python3 -B "$GITHUB_WORKSPACE/scripts/patch-tailscale-luci.py" "$PWD"
 

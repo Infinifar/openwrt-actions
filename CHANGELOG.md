@@ -1,3 +1,7 @@
+## 2026-10-25 - Tailscale upstream refresh
+
+- Adopt upstream #80/#81 architecture and truthful firewall job status; update exact-anchor compatibility guards and fresh-source CI regressions. Refresh source for both firmware editions; preserve private/public configuration separation.
+
 # Changelog
 
 ## 2026-10-25

@@ -1,3 +1,5 @@
+2026-10-25: [Tailscale LuCI upstream #81 integration](docs/tailscale-upstream-81.md); refresh master before each build, without restoring the old UI/worker overlay.
+
 # OpenWrt / LEDE 公开配置模板
 
 这是经过脱敏的构建模板，不是任何生产路由器的恢复包。它保留可复用的构建、DNS、策略组及校验代码；私有部署仓库与设备不受本仓库更新影响。
