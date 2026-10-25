@@ -20,10 +20,10 @@ Dir.mktmpdir('openclash-docker-test-') do |dir|
     result = system(RbConfig.ruby, helper, path, err: File::NULL)
     raise 'unexpected helper exit status' unless result == success
     raise 'failed policy changed the file' if !success && File.binread(path) != before
-    YAML.load_file(path, aliases: true)
+    YAML.safe_load_file(path, aliases: true)
   end
   profiles.each do |source|
-    original = YAML.load_file(source, aliases: true)
+    original = YAML.safe_load_file(source, aliases: true)
     provider = original.fetch('rule-providers').fetch('DockerHubExtra')
     raise 'supplement format mismatch' unless provider.values_at('type', 'behavior', 'format') == %w[http domain mrs]
     raise 'supplement URL/path mismatch' unless provider['url'] == url && provider['path'] == './rule_provider/DockerHubExtra.mrs'

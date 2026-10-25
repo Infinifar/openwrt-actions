@@ -3,7 +3,7 @@
 require 'yaml'
 
 path = ARGV.fetch(0)
-config = YAML.load_file(path, aliases: true)
+config = YAML.safe_load_file(path, aliases: true)
 ai = Array(config['proxy-groups']).find { |group| group['name'] == 'AI' }
 # Do not invent an AI group or reroute an unrelated downloaded configuration.
 exit 0 unless ai

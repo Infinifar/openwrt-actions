@@ -2,7 +2,7 @@
 # Scoped to profiles that already provide a Docker strategy; no credentials.
 require 'yaml'
 path = ARGV.fetch(0)
-config = YAML.load_file(path, aliases: true)
+config = YAML.safe_load_file(path, aliases: true)
 exit 0 unless Array(config['proxy-groups']).any? { |group| group['name'] == 'Docker' }
 
 name = 'DockerHubExtra'

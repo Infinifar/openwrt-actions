@@ -10,7 +10,7 @@ raise 'expected three profiles' unless profiles.size == 3
 checks = 0
 Dir.mktmpdir('openclash-ai-test-') do |dir|
   profiles.each_with_index do |source, index|
-    original = YAML.load_file(source, aliases: true)
+    original = YAML.safe_load_file(source, aliases: true)
     ai = original.fetch('proxy-groups').find { |group| group['name'] == 'AI' }
     raise "manual AI policy missing: #{source}" unless ai['type'] == 'select' && ai['empty-fallback'] == 'REJECT' && !ai.key?('include-all') && !ai.key?('filter') && !ai.key?('use')
     raise 'unexpected additional AI-US group' if original.fetch('proxy-groups').any? { |group| group['name'] == 'AI-US' }
@@ -27,7 +27,7 @@ Dir.mktmpdir('openclash-ai-test-') do |dir|
     File.write(candidate, File.read(source))
     2.times do |iteration|
       raise 'helper failed' unless system(RbConfig.ruby, helper, candidate)
-      current = YAML.load_file(candidate, aliases: true)
+      current = YAML.safe_load_file(candidate, aliases: true)
       raise 'AI selected state persistence disabled' unless current.dig('profile', 'store-selected')
       raise 'YAML converted off to a boolean' unless current['find-process-mode'] == 'off'
       raise 'expected five QUIC guards before AI routing' unless current.fetch('rules').first(5).all? { |rule| rule.start_with?('AND,((NETWORK,UDP),(DST-PORT,443),') && rule.end_with?(',REJECT-DROP') }
@@ -48,7 +48,7 @@ Dir.mktmpdir('openclash-ai-test-') do |dir|
       checks += 1
     end
   end
-  legacy = YAML.load_file(profiles.first, aliases: true)
+  legacy = YAML.safe_load_file(profiles.first, aliases: true)
   legacy_ai = legacy['proxy-groups'].find { |group| group['name'] == 'AI' }
   legacy_ai.merge!('include-all' => true, 'filter' => 'JP|SG|US', 'proxies' => ['Proxy'])
   country = legacy['proxy-groups'].find { |group| group['name'].split.last == 'US' }
@@ -56,7 +56,7 @@ Dir.mktmpdir('openclash-ai-test-') do |dir|
   candidate = File.join(dir, 'legacy.yaml')
   File.write(candidate, YAML.dump(legacy))
   raise 'legacy migration failed' unless system(RbConfig.ruby, helper, candidate)
-  migrated = YAML.load_file(candidate, aliases: true)
+  migrated = YAML.safe_load_file(candidate, aliases: true)
   migrated_ai = migrated['proxy-groups'].find { |group| group['name'] == 'AI' }
   raise 'legacy AI contains leaf/provider selectors' if %w[include-all filter use].any? { |field| migrated_ai.key?(field) }
   raise 'legacy AI is not manual' unless migrated_ai['type'] == 'select' && migrated_ai['empty-fallback'] == 'REJECT'
@@ -64,7 +64,7 @@ Dir.mktmpdir('openclash-ai-test-') do |dir|
   raise 'country icon override not applied' unless migrated['proxy-groups'].find { |group| group['name'].split.last == 'US' }['icon'].start_with?('https://cdn.jsdelivr.net/')
   checks += 1
   %w[url-test fallback load-balance smart].each do |kind|
-    auto = YAML.load_file(profiles.first, aliases: true)
+    auto = YAML.safe_load_file(profiles.first, aliases: true)
     auto_ai = auto['proxy-groups'].find { |group| group['name'] == 'AI' }
     auto_ai.merge!('type' => kind, 'proxies' => ['Proxy'], 'use' => ['fixture'],
                    'url' => 'https://example.invalid/probe', 'interval' => 10,
@@ -72,7 +72,7 @@ Dir.mktmpdir('openclash-ai-test-') do |dir|
     candidate = File.join(dir, "automatic-#{kind}.yaml")
     File.write(candidate, YAML.dump(auto))
     raise "#{kind} repair failed" unless system(RbConfig.ruby, helper, candidate)
-    repaired = YAML.load_file(candidate, aliases: true)['proxy-groups'].find { |group| group['name'] == 'AI' }
+    repaired = YAML.safe_load_file(candidate, aliases: true)['proxy-groups'].find { |group| group['name'] == 'AI' }
     raise "#{kind} remained automatic" unless repaired['type'] == 'select' && repaired['proxies'].size == 9
     raise "#{kind} country default changed" unless repaired['proxies'].first.split.last == 'US'
     %w[include-all filter use url interval strategy uselightgbm collectdata].each do |field|
@@ -86,7 +86,7 @@ Dir.mktmpdir('openclash-ai-test-') do |dir|
   raise 'unrelated config failed' unless system(RbConfig.ruby, helper, candidate)
   raise 'a profile without AI was modified' unless File.read(candidate) == untouched
   checks += 1
-  missing = YAML.load_file(profiles.first, aliases: true)
+  missing = YAML.safe_load_file(profiles.first, aliases: true)
   missing['proxy-groups'].reject! { |group| %w[HK SG JP US TW UK KR IN].include?(group['name'].split.last) }
   candidate = File.join(dir, 'missing-countries.yaml')
   File.write(candidate, YAML.dump(missing))
@@ -94,18 +94,18 @@ Dir.mktmpdir('openclash-ai-test-') do |dir|
   raise 'missing country groups were silently accepted' if system(RbConfig.ruby, helper, candidate, err: File::NULL)
   raise 'failed migration corrupted the profile' unless File.binread(candidate) == before
   checks += 1
-  absent_us = YAML.load_file(profiles.last, aliases: true)
+  absent_us = YAML.safe_load_file(profiles.last, aliases: true)
   absent_us['proxy-groups'].reject! { |group| group['name'].split.last == 'US' }
   candidate = File.join(dir, 'no-us-country.yaml')
   File.write(candidate, YAML.dump(absent_us))
   raise 'non-US-only country profile failed' unless system(RbConfig.ruby, helper, candidate)
-  current = YAML.load_file(candidate, aliases: true)
+  current = YAML.safe_load_file(candidate, aliases: true)
   choices = current['proxy-groups'].find { |group| group['name'] == 'AI' }.fetch('proxies')
   raise 'missing US country group was referenced' unless choices.size == 4 && choices.last == 'US-AI' && choices.none? { |name| name.split.last == 'US' }
   checks += 1
 end
 
-mosdns = YAML.load_file(File.join(root, 'app_config/etc/mosdns/config_custom.yaml'))
+mosdns = YAML.safe_load_file(File.join(root, 'app_config/etc/mosdns/config_custom.yaml'))
 policy = mosdns.fetch('plugins').find { |plugin| plugin['tag'] == 'reject_sequence' }.fetch('args').first
 raise 'HTTPS/SVCB guard must return NODATA, not NXDOMAIN' unless policy['exec'] == 'reject 0'
 raise 'guard must be restricted to the two service-binding query types' unless policy['matches'].include?('qtype 64 65')

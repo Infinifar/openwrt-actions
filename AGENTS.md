@@ -1,4 +1,7 @@
 # Public OpenWrt template rules
+
+- Select the GitHub host Ruby from .ruby-version with the reviewed, commit-pinned official setup-ruby action after apt cleanup. Verify RUBY_VERSION before the configuration gate; do not confuse this host toolchain with the firmware's Ruby package.
+- Keep owned Ruby YAML loaders on safe_load_file with explicit aliases support, never unsafe_load or version-dependent load_file keywords. Run scripts/check-ruby-yaml.rb and AI/US-AI/Docker semantics before publishing; both workflows validate after dependency installation but before swap/disk allocation.
 - Refresh Tailscale LuCI master for every build, retaining upstream #80/#81 UI/status/worker/lifecycle. Apply only exact-anchor residual firmware guards; reject missing fix contracts and never reinstall the old local UI/worker. ci/tailscale-luci-upstream.json records review provenance, not a frozen source pin. Keep this public template free of identities/subscriptions/credentials.
 
 - This is the sanitized public repository. Never copy private GitLab history, identities, subscriptions, accounts, production network inventories or raw backups into it.

@@ -17,7 +17,7 @@ guards = nil
 checks = 0
 Dir.mktmpdir('openclash-us-ai-quic-') do |dir|
   profiles.each do |source|
-    original = YAML.load_file(source, aliases: true)
+    original = YAML.safe_load_file(source, aliases: true)
     groups = original.fetch('proxy-groups')
     raise 'US-AI must be a single manual filtered leaf group' unless groups.select { |g| g['name'] == 'US-AI' } == [expected_group]
     %w[AI Google].each do |name|
@@ -41,7 +41,7 @@ Dir.mktmpdir('openclash-us-ai-quic-') do |dir|
     File.write(path, File.read(source))
     File.chmod(0o600, path)
     raise 'overwrite failed' unless system(RbConfig.ruby, helper, path)
-    overwritten = YAML.load_file(path, aliases: true)
+    overwritten = YAML.safe_load_file(path, aliases: true)
     raise 'OpenAI routing shadows QUIC guard' unless overwritten['rules'].first(5) == guards
     raise 'unrelated source rules changed' unless overwritten['rules'].drop(11) == original['rules'].drop(5)
     raise 'US-AI override diverges' unless overwritten['proxy-groups'].find { |g| g['name'] == 'US-AI' } == expected_group
@@ -51,14 +51,14 @@ Dir.mktmpdir('openclash-us-ai-quic-') do |dir|
     raise 'overwrite is not byte-idempotent' unless File.binread(path) == bytes
     checks += 1
   end
-  legacy = YAML.load_file(profiles.first, aliases: true)
+  legacy = YAML.safe_load_file(profiles.first, aliases: true)
   legacy['proxy-groups'].reject! { |g| g['name'] == 'US-AI' }
   legacy['proxy-groups'].each { |g| g['proxies']&.delete('US-AI') }
   legacy['rules'] -= guards
   path = File.join(dir, 'legacy.yaml')
   File.write(path, YAML.dump(legacy))
   raise 'old profile migration failed' unless system(RbConfig.ruby, helper, path)
-  fixed = YAML.load_file(path, aliases: true)
+  fixed = YAML.safe_load_file(path, aliases: true)
   raise 'old profile group not restored' unless fixed['proxy-groups'].find { |g| g['name'] == 'US-AI' } == expected_group
   raise 'old profile guard not restored' unless fixed['rules'].first(5) == guards
   raise 'old AI default changed' unless fixed['proxy-groups'].find { |g| g['name'] == 'AI' }['proxies'].first.split.last == 'US'
@@ -73,7 +73,7 @@ end
   raise "filter admitted #{name}" if filter.match?(name)
   checks += 1
 end
-provider = YAML.load_file(File.join(root, 'app_config/etc/openclash/proxy_provider/Subscribe.yaml'), aliases: true)
+provider = YAML.safe_load_file(File.join(root, 'app_config/etc/openclash/proxy_provider/Subscribe.yaml'), aliases: true)
 names = Array(provider['proxies']).map { |p| p.fetch('name') }
 raise 'filter disagrees with literal user conditions' unless names.grep(filter) == names.select { |n| n.include?('美国圣何塞') && n.match?(/[567]/) }
 raise 'temporary override files remain' unless Dir.glob(File.join(root, 'app_config/etc/openclash/config/*.ai-policy.*')).empty?

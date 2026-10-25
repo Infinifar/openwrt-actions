@@ -1,3 +1,9 @@
+## 2026-10-25 - public CI Ruby/Psych compatibility
+
+- User-approved GitHub host toolchain upgrade: select Ruby 3.4.12 through a commit-pinned official setup-ruby action, verify the actual interpreter and retain older-runtime-safe parsing.
+
+- Use safe_load_file for AI/US-AI/Docker fixtures and firmware helpers, add an API/security smoke gate and Docker semantic coverage, and validate both manual targets before swap/disk allocation. No private GitLab or live-router changes.
+
 ## 2026-10-25 - Tailscale upstream refresh
 
 - Adopt upstream #80/#81 architecture and truthful firewall job status; update exact-anchor compatibility guards and fresh-source CI regressions. Refresh source for both firmware editions; preserve private/public configuration separation.

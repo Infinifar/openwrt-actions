@@ -81,6 +81,14 @@ jobs:
           sudo -E apt -y autoclean
           sudo -E timedatectl set-timezone "Asia/Shanghai"
 
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1, reviewed 2026-10-25
+        with:
+          ruby-version: .ruby-version
+
+      - name: Validate public configuration
+        run: bash scripts/validate-personal-config.sh
+
       - name: Create Swap
         if: env.ACT != 'true'
         run: |
@@ -119,9 +127,6 @@ jobs:
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-
-      - name: Validate public configuration
-        run: bash scripts/validate-personal-config.sh
 
       - name: Load Settings.ini
         run: |

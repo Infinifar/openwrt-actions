@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+# Probe the actual YAML API and reject unsafe/obsolete loaders before other gates.
+ruby scripts/check-ruby-yaml.rb
+
 fail() {
     printf 'personal config validation failed: %s\n' "$*" >&2
     exit 1
@@ -109,5 +112,6 @@ done
 # Semantic gates preserve country defaults, manual San Jose leaves and scoped QUIC.
 ruby scripts/test-openclash-ai-policy.rb
 ruby scripts/test-openclash-us-ai-quic.rb
+ruby scripts/test-openclash-docker-policy.rb
 
 printf 'personal config validation passed: persistent daily AdGuard filters, no personal accounts/rewrites/identities, safe MosDNS upstreams, IPv6 policy aligned, manual AI/US-AI selectors, scoped QUIC, Docker priority, Tailscale connmark dependencies\n'
