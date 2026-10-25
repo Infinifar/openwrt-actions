@@ -2,7 +2,7 @@
 
 Destination: existing public GitHub repository Infinifar/openwrt-actions, master.
 
-Follow-up: the user explicitly approved publishing LAN 192.168.11.4 and gateway 192.168.11.1. Only those first-boot fields are restored, with allowlist/negative tests and isolated mock-UCI execution; private GitLab and live devices remain untouched.
+Follow-ups: the user explicitly approved LAN 192.168.11.4 and gateway 192.168.11.1, then idempotent deletion of logical WAN/WAN6 and disabling LAN IPv4 DHCP. Only that exact first-boot set is restored, with allowlist/negative tests and isolated mock-UCI execution. LAN6/RA/DHCPv6 and dnsmasq changes remain pending; private GitLab and live devices stay untouched.
 
 This is a reviewed file-level export on top of existing public history, not a private mirror. Accounts, subscriptions, device state, deployment inventory and private GitLab CI are excluded. The private source is read-only and unchanged.
 

@@ -1,10 +1,17 @@
 #!/bin/sh
-# Public first boot: only the explicitly approved LAN address/gateway are fixed.
+# Public first boot: apply only explicitly approved side-router settings.
 # BEGIN approved public LAN defaults
+# Missing WAN sections are normal on single-interface side routers.
+uci -q delete network.wan || true
+uci -q delete network.wan6 || true
 if uci -q get network.lan >/dev/null; then
     uci set network.lan.ipaddr='192.168.11.4'
     uci set network.lan.gateway='192.168.11.1'
     uci commit network
+fi
+if uci -q get dhcp.lan >/dev/null; then
+    uci set dhcp.lan.ignore='1'
+    uci commit dhcp
 fi
 # END approved public LAN defaults
 

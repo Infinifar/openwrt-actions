@@ -2,6 +2,8 @@
 
 ## 2026-10-25
 
+- Second follow-up: also delete logical WAN/WAN6 idempotently and disable LAN IPv4 DHCP as explicitly approved; keep IPv6 and DNS customization pending. Extend isolated boot/negative regression checks.
+
 - Follow-up: retain only user-approved public LAN 192.168.11.4 and gateway 192.168.11.1. Add exact allowlist and isolated first-boot tests; do not restore production DHCP/WAN/IPv6 settings.
 
 - Publish the current reusable OpenWrt customizations as sanitized templates, without private configuration or history.

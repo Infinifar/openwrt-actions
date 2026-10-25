@@ -54,12 +54,15 @@ def main():
         require(isinstance(events,dict) and set(events) == {"workflow_dispatch"}, "Workflow is not manual-only: "+path.name)
     boot = (ROOT/"app_config/etc/uci-defaults/zzzz-extra-settings").read_text()
     approved = [
-        "uci set network.lan.ipaddr=\'192.168.11.4\'",
-        "uci set network.lan.gateway=\'192.168.11.1\'",
+        "uci -q delete network.wan || true",
+        "uci -q delete network.wan6 || true",
+        "uci set network.lan.ipaddr='192.168.11.4'",
+        "uci set network.lan.gateway='192.168.11.1'",
+        "uci set dhcp.lan.ignore='1'",
     ]
     mutations = [line.strip() for line in boot.splitlines()
                  if re.match(r"\s*uci(?:\s+-\S+)*\s+(?:set|add_list|del_list|delete|rename|reorder)\s+(?:network|dhcp|dropbear|firewall)\.",line)]
-    require(mutations == approved, "Boot network changes exceed approved LAN address/gateway")
+    require(mutations == approved, "Boot network changes exceed approved side-router defaults")
     print("Public privacy checks passed: "+str(checked)+" files, empty accounts/providers/identities, manual-only workflows")
 
 if __name__ == "__main__":

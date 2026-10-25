@@ -7,5 +7,6 @@
 - Preserve attribution to alecthw/openwrt-actions and all directly integrated projects in CREDITS.md.
 - Keep firmware workflows manual-only. Ordinary pushes must not compile, release or synchronize upstream automatically.
 - Retain existing OpenClash AI/US-AI, scoped QUIC, Docker routing, MosDNS hosts, Tailscale compatibility and Argon dependency gates.
-- The user explicitly approved public LAN 192.168.11.4 and gateway 192.168.11.1. Preserve only these two first-boot network mutations; do not reintroduce production WAN/DHCP/IPv6/MAC/SSH customization.
+- Approved public first-boot networking: LAN 192.168.11.4, gateway 192.168.11.1, idempotent deletion of logical WAN/WAN6, and dhcp.lan.ignore=1 (IPv4 DHCP off). Keep exact-allowlist and isolated boot tests.
+- Do not restore LAN6/RA/DHCPv6, dnsmasq port/upstream, MAC or SSH customization without further approval. Deleting WAN6 does not globally disable IPv6.
 - Do not change private repositories or live routers while maintaining this public template.

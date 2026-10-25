@@ -72,8 +72,10 @@ class PublicTemplateTests(unittest.TestCase):
         for command in [
             "uci set network.lan.ipaddr=\'192.0.2.1\'",
             "uci set network.lan.macaddr=\'02:00:00:00:00:01\'",
-            "uci set dhcp.lan.ignore=\'1\'",
-            "uci -q delete network.wan",
+            "uci set dhcp.lan.dhcpv6='disabled'",
+            "uci set dhcp.@dnsmasq[0].port='3553'",
+            "uci set network.lan6.proto='dhcpv6'",
+            "uci -q delete network.lan",
             "uci set dropbear.main.Port=\'2222\'",
         ]:
             with self.subTest(command=command):
@@ -88,21 +90,32 @@ class PublicTemplateTests(unittest.TestCase):
             p.write_text(p.read_text().replace("    uci set network.lan.gateway=\'192.168.11.1\'\n",""))
         self.check(edit)
 
-    def test_approved_boot_block_only_sets_ip_and_gateway(self):
+    def test_approved_boot_block_sets_only_side_router_fields(self):
         source=(ROOT/"app_config/etc/uci-defaults/zzzz-extra-settings").read_text()
         block=source.split("# BEGIN approved public LAN defaults\n",1)[1].split("# END approved public LAN defaults",1)[0]
         mock='uci() { printf "%s\\n" "$*"; };\n'
         result=subprocess.run(["sh","-s"],input=mock+block,capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stderr)
-        self.assertEqual(result.stdout.splitlines(),["set network.lan.ipaddr=192.168.11.4","set network.lan.gateway=192.168.11.1","commit network"])
+        self.assertEqual(result.stdout.splitlines(),["-q delete network.wan","-q delete network.wan6",
+            "set network.lan.ipaddr=192.168.11.4","set network.lan.gateway=192.168.11.1",
+            "commit network","set dhcp.lan.ignore=1","commit dhcp"])
 
-    def test_approved_boot_block_skips_missing_lan(self):
+    def test_approved_boot_block_skips_missing_lan_and_dhcp(self):
         source=(ROOT/"app_config/etc/uci-defaults/zzzz-extra-settings").read_text()
         block=source.split("# BEGIN approved public LAN defaults\n",1)[1].split("# END approved public LAN defaults",1)[0]
         mock='uci() { if [ "$1" = "-q" ]; then return 1; fi; printf "%s\\n" "$*"; };\n'
         result=subprocess.run(["sh","-s"],input=mock+block,capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertEqual(result.stdout,"")
+
+    def test_missing_wan_deletions_are_idempotent(self):
+        source=(ROOT/"app_config/etc/uci-defaults/zzzz-extra-settings").read_text()
+        block=source.split("# BEGIN approved public LAN defaults\n",1)[1].split("# END approved public LAN defaults",1)[0]
+        mock='uci() { if [ "$1" = "-q" ] && [ "$2" = "delete" ]; then return 1; fi; printf "%s\\n" "$*"; };\n'
+        result=subprocess.run(["sh","-s"],input=mock+block,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertIn("set network.lan.ipaddr=192.168.11.4",result.stdout)
+        self.assertIn("set dhcp.lan.ignore=1",result.stdout)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
