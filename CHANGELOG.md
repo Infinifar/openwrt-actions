@@ -1,3 +1,7 @@
+## 2026-10-28 - public Proxy defaults
+
+- Prefer the existing US country in all three manual Proxy selectors and offer US-AI once, with idempotent runtime repair and legacy/negative regressions. Preserve all other choices, AI/Google defaults, country Auto/Manual behavior, saved selections and sanitized public defaults. No firmware build or live deployment is implied.
+
 ## 2026-10-25 - public CI Ruby/Psych compatibility
 
 - User-approved GitHub host toolchain upgrade: select Ruby 3.4.12 through a commit-pinned official setup-ruby action, verify the actual interpreter and retain older-runtime-safe parsing.

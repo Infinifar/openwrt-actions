@@ -30,6 +30,15 @@ else
 end
 google = groups.find { |group| group['name'] == 'Google' && group['type'] == 'select' }
 google['proxies'] = (Array(google['proxies']) + ['US-AI']).uniq if google
+# Prefer an existing US country without changing the other choices or their order.
+# Saved controller selections remain intact; list order supplies new-install defaults.
+proxy = groups.find { |group| group['name'] == 'Proxy' && group['type'] == 'select' }
+if proxy
+  default_us = country_names.find { |name| name.split.last == 'US' }
+  choices = Array(proxy['proxies'])
+  proxy['proxies'] = ([default_us].compact +
+                      (choices - [default_us, 'US-AI']) + ['US-AI']).uniq
+end
 ai['type'] = 'select'
 %w[proxies use include-all include-all-providers include-all-proxies filter exclude-filter url interval tolerance
    default-selected strategy lazy timeout max-failed-times expected-status

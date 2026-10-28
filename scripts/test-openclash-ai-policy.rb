@@ -103,6 +103,56 @@ Dir.mktmpdir('openclash-ai-test-') do |dir|
   choices = current['proxy-groups'].find { |group| group['name'] == 'AI' }.fetch('proxies')
   raise 'missing US country group was referenced' unless choices.size == 4 && choices.last == 'US-AI' && choices.none? { |name| name.split.last == 'US' }
   checks += 1
+
+  %w[missing-us-ai duplicate-us-ai missing-us-group missing-proxy nonmanual-proxy].each do |kind|
+    fixture = YAML.safe_load_file(profiles.first, aliases: true)
+    groups = fixture.fetch('proxy-groups')
+    proxy = groups.find { |group| group['name'] == 'Proxy' }
+    us = groups.find { |group| group['name'].split.last == 'US' }.fetch('name')
+    # Recreate the old DIRECT-first order while keeping all other valid options.
+    proxy['proxies'] = (proxy['proxies'] - [us, 'US-AI']) + [us]
+    proxy['proxies'] += ['US-AI', 'US-AI'] if kind == 'duplicate-us-ai'
+    if kind == 'missing-us-group'
+      groups.reject! { |group| group['name'] == us }
+      groups.each { |group| group['proxies']&.delete(us) }
+    elsif kind == 'missing-proxy'
+      groups.delete(proxy)
+    elsif kind == 'nonmanual-proxy'
+      proxy['type'] = 'url-test'
+    end
+    original_proxy = Marshal.load(Marshal.dump(groups.find { |group| group['name'] == 'Proxy' }))
+    original_ai = Marshal.load(Marshal.dump(groups.find { |group| group['name'] == 'AI' }))
+    original_google = Marshal.load(Marshal.dump(groups.find { |group| group['name'] == 'Google' }))
+    original_countries = Marshal.load(Marshal.dump(groups.select { |group| %w[HK SG JP US TW UK KR IN].include?(group['name'].split.last) }))
+    candidate = File.join(dir, "proxy-#{kind}.yaml")
+    File.write(candidate, YAML.dump(fixture))
+    raise "Proxy migration failed: #{kind}" unless system(RbConfig.ruby, helper, candidate)
+    migrated = YAML.safe_load_file(candidate, aliases: true)
+    migrated_groups = migrated.fetch('proxy-groups')
+    actual = migrated_groups.find { |group| group['name'] == 'Proxy' }
+    if kind == 'missing-proxy' || kind == 'nonmanual-proxy'
+      raise 'unowned Proxy group was created or changed' unless actual == original_proxy
+    else
+      expected_us = kind == 'missing-us-group' ? nil : us
+      expected = ([expected_us].compact +
+                  (original_proxy.fetch('proxies') - [expected_us, 'US-AI']) + ['US-AI']).uniq
+      raise "Proxy options/default changed incorrectly: #{kind}" unless actual.fetch('proxies') == expected
+      raise 'US-AI must occur exactly once in Proxy' unless actual.fetch('proxies').count('US-AI') == 1
+      raise 'Proxy metadata changed' unless actual.reject { |key, _| key == 'proxies' } == original_proxy.reject { |key, _| key == 'proxies' }
+      if expected_us
+        raise 'Proxy default is not the existing US country' unless actual.fetch('proxies').first == expected_us
+      else
+        raise 'Proxy references a missing US country' if actual.fetch('proxies').include?(us)
+      end
+    end
+    raise 'Proxy migration changed AI choices' unless migrated_groups.find { |group| group['name'] == 'AI' } == original_ai
+    raise 'Proxy migration changed Google choices' unless migrated_groups.find { |group| group['name'] == 'Google' } == original_google
+    raise 'Proxy migration changed country groups' unless migrated_groups.select { |group| %w[HK SG JP US TW UK KR IN].include?(group['name'].split.last) } == original_countries
+    bytes = File.binread(candidate)
+    raise 'Proxy repeat migration failed' unless system(RbConfig.ruby, helper, candidate)
+    raise 'Proxy migration is not idempotent' unless File.binread(candidate) == bytes
+    checks += 1
+  end
 end
 
 mosdns = YAML.safe_load_file(File.join(root, 'app_config/etc/mosdns/config_custom.yaml'))

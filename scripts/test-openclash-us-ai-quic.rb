@@ -20,11 +20,14 @@ Dir.mktmpdir('openclash-us-ai-quic-') do |dir|
     original = YAML.safe_load_file(source, aliases: true)
     groups = original.fetch('proxy-groups')
     raise 'US-AI must be a single manual filtered leaf group' unless groups.select { |g| g['name'] == 'US-AI' } == [expected_group]
-    %w[AI Google].each do |name|
+    %w[AI Google Proxy].each do |name|
       group = groups.find { |g| g['name'] == name }
       raise "missing optional US-AI choice: #{name}" unless group['proxies'].last == 'US-AI'
+      raise "duplicate optional US-AI choice: #{name}" unless group['proxies'].count('US-AI') == 1
       raise "US-AI silently changed default: #{name}" if group['proxies'].first == 'US-AI'
     end
+    proxy = groups.find { |g| g['name'] == 'Proxy' }
+    raise 'Proxy must default to the existing US country group' unless proxy['type'] == 'select' && proxy['proxies'].first.split.last == 'US' && groups.any? { |g| g['name'] == proxy['proxies'].first }
     current_guards = original.fetch('rules').first(5)
     guards ||= current_guards
     raise 'profile QUIC policies differ' unless guards == current_guards

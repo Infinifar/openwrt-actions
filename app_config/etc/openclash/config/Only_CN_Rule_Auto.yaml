@@ -255,13 +255,14 @@ proxy-groups:
     icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/png/clash.png
     type: select
     proxies:
+      - 🇺🇸 US
       - DIRECT
       - 🇯🇵 JP
       - 🇸🇬 SG
       - 🇭🇰 HK
-      - 🇺🇸 US
       - 🇺🇳 Special
       - 🛫 Airport
+      - US-AI
   - name: Domestic
     icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/png/router.png
     type: select
