@@ -1,3 +1,7 @@
+## 2026-11-01 - Dedicated GitHub routing
+
+- Add the manual GitHub selector, public rule provider and priority GitHub/MCP fallbacks to all three profiles. Preserve ghcr.io on Docker, the QUIC/AI/Google prefix and all other settings. Add idempotent final-overwrite and collision/preservation regression gates. No build or live-router deployment.
+
 ## 2026-11-01 - Google service routing
 
 - Move Antigravity and Gemini from AI to Google, including legacy overwrite repair and regression gates; preserve other AI routing, QUIC and saved selections. No firmware build.

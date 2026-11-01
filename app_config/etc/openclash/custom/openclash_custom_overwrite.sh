@@ -32,4 +32,10 @@ if ! ruby -E UTF-8 "$(dirname "$0")/openclash_docker_policy.rb" "$CONFIG_FILE"; 
     exit 1
 fi
 
+# Keep GitHub/MCP ahead of broad direct/download/media after all other hooks.
+if ! ruby -E UTF-8 "$(dirname "$0")/openclash_github_policy.rb" "$CONFIG_FILE"; then
+    LOG_TIP "Failed to apply the GitHub rules policy; inspect this profile."
+    exit 1
+fi
+
 exit 0

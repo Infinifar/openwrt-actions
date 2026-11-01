@@ -1,5 +1,11 @@
 # Push notes
 
+## 2026-11-01 - Dedicated GitHub / MCP rules; no build
+
+- Add GitHub manual selection and early explicit/provider routing to all three OpenClash profiles; retain Docker for ghcr.io, existing QUIC/AI/Google rules, subscriptions, IPv6, credentials and stored selections.
+- Install the scoped final overwrite and semantic regression gate. Validate before pushing; do not build, dispatch workflows, change live routers or continuously monitor. Public and private histories remain separate.
+
+
 ## 2026-11-01 - Antigravity / Gemini use Google; no build
 
 - Route the complete Gemini provider and explicit Antigravity/Gemini/generative-language fallbacks to Google in all three profiles and the final overwrite. Repair only legacy owned AI routes; preserve other AI services, QUIC, selectors, subscriptions, DNS and identities.

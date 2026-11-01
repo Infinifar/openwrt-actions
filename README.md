@@ -1,3 +1,5 @@
+2026-11-01: [Dedicated GitHub / MCP routing](docs/openclash-github-routing.md) in all three profiles; Proxy default, ghcr.io remains Docker; no IPv6 or stored-selection changes.
+
 2026-10-25: [Tailscale LuCI upstream #81 integration](docs/tailscale-upstream-81.md); refresh master before each build, without restoring the old UI/worker overlay.
 
 # OpenWrt / LEDE 公开配置模板
