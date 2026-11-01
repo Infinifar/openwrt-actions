@@ -15,6 +15,8 @@
 
 `Proxy` 保持手动选择，默认现有美国国家组，并新增可选 `US-AI`；其他选项、AI/Google 默认和国家组 Auto/Manual 行为不变。已有选择缓存不会因排序变化而迁移，详见 [Proxy 默认与选择持久化](docs/openclash-proxy-defaults.md)。公开模板仍无节点，须自行导入后使用。
 
+Antigravity 与 Gemini（包括 Gemini 规则集）统一使用 `Google`，不再进入 `AI`；OpenAI、Claude、Copilot 保持原分流。现有 QUIC 限制及节点选择不变，详见 [Google 服务分流](docs/openclash-google-routing.md)。
+
 ## 本公开版刻意不包含
 
 代理订阅和节点、账号密码及密码哈希、VPN 登录状态和私钥、ZeroTier 网络身份、Beszel 授权、私人域名及未授权的 IP/MAC、生产防火墙和其他网络拓扑、个人壁纸、原始备份与私有 GitLab 提交历史。下述明确保留的 LAN 地址和网关是例外。

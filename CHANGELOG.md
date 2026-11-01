@@ -1,3 +1,7 @@
+## 2026-11-01 - Google service routing
+
+- Move Antigravity and Gemini from AI to Google, including legacy overwrite repair and regression gates; preserve other AI routing, QUIC and saved selections. No firmware build.
+
 ## 2026-10-28 - public Proxy defaults
 
 - Prefer the existing US country in all three manual Proxy selectors and offer US-AI once, with idempotent runtime repair and legacy/negative regressions. Preserve all other choices, AI/Google defaults, country Auto/Manual behavior, saved selections and sanitized public defaults. No firmware build or live deployment is implied.

@@ -1,5 +1,11 @@
 # Push notes
 
+## 2026-11-01 - Antigravity / Gemini use Google; no build
+
+- Route the complete Gemini provider and explicit Antigravity/Gemini/generative-language fallbacks to Google in all three profiles and the final overwrite. Repair only legacy owned AI routes; preserve other AI services, QUIC, selectors, subscriptions, DNS and identities.
+- Add idempotence, legacy-route, missing-group/provider and unrelated-policy regression cases to the standard configuration gate. See docs/openclash-google-routing.md.
+- Validate and review before pushing. No firmware build, workflow dispatch or continuous monitoring is requested.
+
 ## 2026-10-28 - public US-first Proxy and optional US-AI
 
 - Apply only the generic routing-policy patch on existing public history: three manual Proxy lists prefer their existing US country, append US-AI once, and keep every other option in its relative order. The final helper repairs the same layout idempotently.

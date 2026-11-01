@@ -16,3 +16,5 @@
 - Also approved: LAN6 DHCPv6 client on LAN (device/legacy ifname), removal of LAN ip6assign, request address/prefix without peer DNS, LAN-zone membership; dnsmasq port3553, DNS redirection/cache off and local MosDNS upstream127.0.0.1#5335. Keep list additions idempotent.
 - RA/DHCPv6 server settings, private MAC/SSH and device identities remain outside the approved public defaults. LAN6 is not the proxy IPv6 switch.
 - Do not change private repositories or live routers while maintaining this public template.
+
+- Route Antigravity and the complete Gemini provider to Google, not AI. Keep the three explicit service fallbacks and legacy overwrite migration idempotent; preserve unrelated AI/QUIC rules, selectors and credentials, and run scripts/test-openclash-google-routing.rb.

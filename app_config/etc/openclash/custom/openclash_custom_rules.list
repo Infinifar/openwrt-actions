@@ -24,6 +24,8 @@ rules:
 - DOMAIN-SUFFIX,openai.com.cdn.cloudflare.net,AI
 - DOMAIN-SUFFIX,chatgpt.com.cdn.cloudflare.net,AI
 - DOMAIN-SUFFIX,antigravity.google,Google
+- DOMAIN-SUFFIX,gemini.google.com,Google
+- DOMAIN-SUFFIX,generativelanguage.googleapis.com,Google
 - DOMAIN-KEYWORD,sciencedirect,DIRECT
 - DOMAIN-KEYWORD,elsevier,DIRECT
 - DOMAIN-SUFFIX,sjtu.edu.cn,DIRECT

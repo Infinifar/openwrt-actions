@@ -69,6 +69,29 @@ priority_rules = %w[openai.com chatgpt.com oaistatic.com oaiusercontent.com
                     openai.com.cdn.cloudflare.net chatgpt.com.cdn.cloudflare.net]
                     .map { |domain| "DOMAIN-SUFFIX,#{domain},AI" }
 old_rules = Array(config['rules'])
+# Google-owned AI products must not follow the separate AI selector. Repair
+# legacy explicit/provider rules too, while preserving unrelated custom rules.
+google_domains = %w[antigravity.google gemini.google.com generativelanguage.googleapis.com]
+google_present = groups.any? { |group| group['name'] == 'Google' }
+google_priority_rules = google_present ? google_domains.map { |domain| "DOMAIN-SUFFIX,#{domain},Google" } : []
+google_owned_rule = lambda do |fields|
+  (fields[0] == 'RULE-SET' && fields[1] == 'Gemini') ||
+    (%w[DOMAIN DOMAIN-SUFFIX].include?(fields[0]) && google_domains.any? { |domain| fields[1] == domain || fields[1].to_s.end_with?(".#{domain}") }) ||
+    (fields[0] == 'DOMAIN-KEYWORD' && %w[antigravity gemini generativelanguage].include?(fields[1]))
+end
+if google_present
+  seen_google_rules = {}
+  old_rules = old_rules.filter_map do |rule|
+    fields = rule.split(',')
+    fields[2] = 'Google' if fields[2] == 'AI' && google_owned_rule.call(fields)
+    normalized = fields.join(',')
+    if fields[2] == 'Google' && google_owned_rule.call(fields)
+      next if seen_google_rules[normalized]
+      seen_google_rules[normalized] = true
+    end
+    normalized
+  end
+end
 # Domain-only QUIC guard: never reuse the classical AI/Google providers here,
 # because those also contain IP/ASN rules which could block unrelated hosts.
 # A group disable-udp flag is not a reject: unsupported UDP can match later rules.
@@ -81,7 +104,7 @@ quic_domains = %w[antigravity.google copilot.microsoft.com sydney.bing.com
                   openai.com chatgpt.com oaistatic.com oaiusercontent.com
                   openai.com.cdn.cloudflare.net chatgpt.com.cdn.cloudflare.net]
 quic_rules << "AND,((NETWORK,UDP),(DST-PORT,443),(OR,(#{quic_domains.map { |domain| "(DOMAIN-SUFFIX,#{domain})" }.join(',')}))),REJECT-DROP"
-owned_rules = quic_rules + priority_rules
+owned_rules = quic_rules + priority_rules + google_priority_rules
 config['rules'] = owned_rules + old_rules.reject { |rule| owned_rules.include?(rule) }
 
 # Atomic replacement avoids leaving a truncated config if the rootfs fills up.

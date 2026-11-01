@@ -598,6 +598,10 @@ rules:
   - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,anthropic)),REJECT-DROP
   - AND,((NETWORK,UDP),(DST-PORT,443),(GEOSITE,github-copilot)),REJECT-DROP
   - AND,((NETWORK,UDP),(DST-PORT,443),(OR,((DOMAIN-SUFFIX,antigravity.google),(DOMAIN-SUFFIX,copilot.microsoft.com),(DOMAIN-SUFFIX,sydney.bing.com),(DOMAIN-SUFFIX,edgeservices.bing.com),(DOMAIN-SUFFIX,services.bingapis.com),(DOMAIN-SUFFIX,gateway.bingviz.microsoft.net),(DOMAIN-SUFFIX,gateway.bingviz.microsoftapp.net),(DOMAIN-SUFFIX,openai.com),(DOMAIN-SUFFIX,chatgpt.com),(DOMAIN-SUFFIX,oaistatic.com),(DOMAIN-SUFFIX,oaiusercontent.com),(DOMAIN-SUFFIX,openai.com.cdn.cloudflare.net),(DOMAIN-SUFFIX,chatgpt.com.cdn.cloudflare.net)))),REJECT-DROP
+  # Google AI services keep the Google policy, independently of AI.
+  - DOMAIN-SUFFIX,antigravity.google,Google
+  - DOMAIN-SUFFIX,gemini.google.com,Google
+  - DOMAIN-SUFFIX,generativelanguage.googleapis.com,Google
   # - PROCESS-NAME,zerotier-one,DIRECT
 
   # Local network, should be resolve
@@ -626,10 +630,10 @@ rules:
   - RULE-SET,GameDownload,Domestic
 
   # APP
-  # AI rules must precede Google because Gemini uses Google domains.
+  # OpenAI/Claude/Copilot use AI; Gemini and Antigravity use Google.
   - RULE-SET,OpenAI,AI
   - RULE-SET,Claude,AI
-  - RULE-SET,Gemini,AI
+  - RULE-SET,Gemini,Google
   - RULE-SET,Copilot,AI
   - RULE-SET,Google,Google
   - RULE-SET,Telegram,Telegram
