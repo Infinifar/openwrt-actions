@@ -20,7 +20,7 @@ us_ai_settings = {
   'name' => 'US-AI',
   'icon' => 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/United_States.png',
   'type' => 'select', 'include-all-providers' => true, 'include-all-proxies' => true,
-  'filter' => '^(?=.*美国圣何塞)(?=.*[567]).*$', 'empty-fallback' => 'REJECT'
+  'filter' => '美国圣何塞', 'empty-fallback' => 'REJECT'
 }
 us_ai = groups.find { |group| group['name'] == 'US-AI' }
 if us_ai

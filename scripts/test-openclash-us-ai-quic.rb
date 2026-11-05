@@ -11,7 +11,7 @@ expected_group = {
   'name' => 'US-AI',
   'icon' => 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/United_States.png',
   'type' => 'select', 'include-all-providers' => true, 'include-all-proxies' => true,
-  'filter' => '^(?=.*美国圣何塞)(?=.*[567]).*$', 'empty-fallback' => 'REJECT'
+  'filter' => '美国圣何塞', 'empty-fallback' => 'REJECT'
 }
 guards = nil
 checks = 0
@@ -68,16 +68,16 @@ Dir.mktmpdir('openclash-us-ai-quic-') do |dir|
   checks += 1
 end
 filter = Regexp.new(expected_group.fetch('filter'))
-%w[美国圣何塞05 美国圣何塞06 美国圣何塞07 美国圣何塞15 5-美国圣何塞 美国圣何塞01-0.5倍].each do |name|
+%w[美国圣何塞 美国圣何塞01 美国圣何塞02 美国圣何塞04 美国圣何塞05 美国圣何塞06 美国圣何塞07 美国圣何塞08 美国圣何塞99 美国圣何塞15 5-美国圣何塞 美国圣何塞01-0.5倍].each do |name|
   raise "literal inclusion filter rejected #{name}" unless filter.match?(name)
   checks += 1
 end
-%w[美国圣何塞01 美国圣何塞02 美国圣何塞04 美国圣何塞08 美国洛杉矶05 日本圣何塞05 美国圣何塞].each do |name|
+%w[美国洛杉矶05 日本圣何塞05 美国 美国SanJose05].each do |name|
   raise "filter admitted #{name}" if filter.match?(name)
   checks += 1
 end
 provider = YAML.safe_load_file(File.join(root, 'app_config/etc/openclash/proxy_provider/Subscribe.yaml'), aliases: true)
 names = Array(provider['proxies']).map { |p| p.fetch('name') }
-raise 'filter disagrees with literal user conditions' unless names.grep(filter) == names.select { |n| n.include?('美国圣何塞') && n.match?(/[567]/) }
+raise 'filter disagrees with literal user conditions' unless names.grep(filter) == names.select { |n| n.include?('美国圣何塞') }
 raise 'temporary override files remain' unless Dir.glob(File.join(root, 'app_config/etc/openclash/config/*.ai-policy.*')).empty?
 puts "US-AI/QUIC regression tests passed: #{checks} fixtures; #{names.grep(filter).size} current matching leaves"

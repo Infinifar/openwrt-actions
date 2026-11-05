@@ -1,3 +1,5 @@
+2026-11-05: [US-AI includes all San Jose names](docs/openclash-us-ai-all-san-jose.md); no numeric restriction; manual and stored selections preserved.
+
 2026-11-01: [Dedicated GitHub / MCP routing](docs/openclash-github-routing.md) in all three profiles; Proxy default, ghcr.io remains Docker; no IPv6 or stored-selection changes.
 
 2026-10-25: [Tailscale LuCI upstream #81 integration](docs/tailscale-upstream-81.md); refresh master before each build, without restoring the old UI/worker overlay.

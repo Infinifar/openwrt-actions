@@ -521,7 +521,7 @@ proxy-groups:
     type: select
     include-all-providers: true
     include-all-proxies: true
-    filter: '^(?=.*美国圣何塞)(?=.*[567]).*$'
+    filter: '美国圣何塞'
     empty-fallback: REJECT
 
   # Area

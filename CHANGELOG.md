@@ -1,3 +1,7 @@
+## 2026-11-05 - US-AI includes all San Jose nodes
+
+- Remove only the numeric 5/6/7 condition in all three templates and the final overwrite. Include every name containing 美国圣何塞; preserve manual/stored selections, other routing and private data. Update regressions/docs; validate before push; no firmware build.
+
 ## 2026-11-01 - Dedicated GitHub routing
 
 - Add the manual GitHub selector, public rule provider and priority GitHub/MCP fallbacks to all three profiles. Preserve ghcr.io on Docker, the QUIC/AI/Google prefix and all other settings. Add idempotent final-overwrite and collision/preservation regression gates. No build or live-router deployment.

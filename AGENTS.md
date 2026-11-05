@@ -20,3 +20,5 @@
 - Route Antigravity and the complete Gemini provider to Google, not AI. Keep the three explicit service fallbacks and legacy overwrite migration idempotent; preserve unrelated AI/QUIC rules, selectors and credentials, and run scripts/test-openclash-google-routing.rb.
 
 - Keep the dedicated manual GitHub selector in all three profiles (Proxy default, available countries and optional US-AI); route GitHub/MCP before broad direct/download/media, retain ghcr.io on Docker and the existing QUIC/AI/Google safety prefix. Apply the final GitHub hook and run scripts/test-openclash-github-routing.rb. Preserve subscriptions, selectors, IPv6 and live state; do not invent a missing GitHub group or overwrite custom provider conflicts.
+
+- US-AI must include every provider/inline node whose name contains 美国圣何塞, without a 5/6/7 restriction. Keep manual selection, reject-empty behavior, persisted choices, all other group settings and scoped QUIC unchanged. Run the US-AI/QUIC regression gate.
